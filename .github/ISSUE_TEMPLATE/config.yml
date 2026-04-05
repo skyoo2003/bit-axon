@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💡 Feature requests & ideas
+    url: https://github.com/skyoo2003/bit-axon/discussions/new?category=ideas
+    about: Please use Discussions for feature proposals
+  - name: 🤔 Support & questions
+    url: https://github.com/skyoo2003/bit-axon/discussions
+    about: Ask questions in Discussions, not Issues
+  - name: 📜 Code of Conduct reports
+    url: https://github.com/skyoo2003/bit-axon/blob/main/CODE_OF_CONDUCT.md
+    about: Report Code of Conduct violations (see CoC for contact info)
