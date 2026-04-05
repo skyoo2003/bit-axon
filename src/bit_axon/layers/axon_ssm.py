@@ -4,6 +4,16 @@ import mlx.nn as nn
 from bit_axon.config import BitAxonConfig
 
 
+@mx.compile
+def _ssm_fma(a: mx.array, b: mx.array, c: mx.array) -> mx.array:
+    return a * b + c
+
+
+@mx.compile
+def _compute_dt(dt: mx.array, dt_bias: mx.array, lo: float, hi: float) -> mx.array:
+    return mx.clip(nn.softplus(dt + dt_bias), lo, hi)
+
+
 class AxonSSM(nn.Module):
     def __init__(self, config: BitAxonConfig):
         super().__init__()
@@ -59,7 +69,7 @@ class AxonSSM(nn.Module):
             dA = mx.exp(dt_t[:, :, None] * A[None, :, :])
             dB = dt_t[:, :, None] * B_t[:, None, :]
 
-            h = dA * h + dB * x_t[:, :, None]
+            h = _ssm_fma(dA, h, dB * x_t[:, :, None])
             y = (h * C_t[:, None, :]).sum(axis=-1) + self.D * x_t
             ys.append(y)
 
@@ -87,7 +97,8 @@ class AxonSSM(nn.Module):
         C_ssm = BC_dt[1]
         dt = BC_dt[2]
 
-        dt = nn.softplus(self.dt_proj(dt))
+        dt_raw = self.dt_proj(dt)
+        dt = _compute_dt(dt_raw, mx.zeros_like(dt_raw), 1e-4, 100.0)
 
         y, new_ssm_state = self._ssm_scan(x_conv, dt, B_ssm, C_ssm, ssm_state)
 

@@ -2,6 +2,7 @@ import mlx.core as mx
 import mlx.nn as nn
 
 
+@mx.compile
 def swiglu(x: mx.array, gate: mx.array) -> mx.array:
     return nn.silu(gate) * x
 
@@ -10,9 +11,7 @@ class SwitchLinear(nn.Module):
     def __init__(self, input_dims: int, output_dims: int, num_experts: int, bias: bool = True):
         super().__init__()
         scale = (1.0 / input_dims) ** 0.5
-        self.weight = mx.random.uniform(
-            low=-scale, high=scale, shape=(num_experts, output_dims, input_dims)
-        )
+        self.weight = mx.random.uniform(low=-scale, high=scale, shape=(num_experts, output_dims, input_dims))
         self.bias = mx.zeros((num_experts, output_dims)) if bias else None
 
     def __call__(self, x: mx.array, indices: mx.array, sorted_indices: bool = False) -> mx.array:
