@@ -3,8 +3,6 @@ import math
 import mlx.core as mx
 import mlx.nn as nn
 
-from bit_axon.utils.cache import KVCache
-
 
 class SlidingWindowAttention(nn.Module):
     def __init__(self, hidden_dim: int, num_heads: int, window_size: int):
@@ -59,9 +57,7 @@ class SlidingWindowAttention(nn.Module):
 
         causal_offset = kv_len - seq_len
         causal_mask = k_pos[None, :] <= (q_pos[:, None] + causal_offset)
-        window_mask = (q_pos[:, None] + causal_offset) - k_pos[
-            None, :
-        ] < self.window_size
+        window_mask = (q_pos[:, None] + causal_offset) - k_pos[None, :] < self.window_size
 
         mask = mx.where(causal_mask & window_mask, 0.0, -mx.inf)
         return mask

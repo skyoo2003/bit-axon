@@ -1,5 +1,4 @@
 import mlx.core as mx
-import pytest
 
 from bit_axon.config import BitAxonConfig
 from bit_axon.layers.moe import (
@@ -144,11 +143,7 @@ class TestSharedExpertMoE:
             stripped = line.strip()
             if "def __call__" in stripped:
                 in_forward = True
-            elif (
-                in_forward
-                and stripped.startswith("def ")
-                and "__call__" not in stripped
-            ):
+            elif in_forward and stripped.startswith("def ") and "__call__" not in stripped:
                 in_forward = False
             if in_forward:
                 forward_lines.append(line)

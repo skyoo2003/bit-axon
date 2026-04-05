@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import mlx.core as mx
 
 
 class ArraysCache:
     def __init__(self, size: int):
-        self.cache: list[Optional[mx.array]] = [None] * size
+        self.cache: list[mx.array | None] = [None] * size
 
-    def __getitem__(self, idx: int) -> Optional[mx.array]:
+    def __getitem__(self, idx: int) -> mx.array | None:
         return self.cache[idx]
 
-    def __setitem__(self, idx: int, value: Optional[mx.array]):
+    def __setitem__(self, idx: int, value: mx.array | None):
         self.cache[idx] = value
 
     def update(self, values: list[mx.array]):
@@ -22,8 +20,8 @@ class ArraysCache:
 
 class KVCache:
     def __init__(self):
-        self.k: Optional[mx.array] = None
-        self.v: Optional[mx.array] = None
+        self.k: mx.array | None = None
+        self.v: mx.array | None = None
 
     def update_and_fetch(self, xk: mx.array, xv: mx.array) -> tuple[mx.array, mx.array]:
         if self.k is None:

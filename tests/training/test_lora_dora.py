@@ -1,9 +1,8 @@
 import mlx.core as mx
 import mlx.nn as nn
-import pytest
 
-from bit_axon.training.lora import LoRALinear
 from bit_axon.training.dora import DoRALinear
+from bit_axon.training.lora import LoRALinear
 
 
 class TestLoRALinear:

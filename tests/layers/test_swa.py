@@ -1,6 +1,5 @@
 import mlx.core as mx
 import mlx.nn as nn
-import pytest
 
 from bit_axon.layers.swa import SlidingWindowAttention
 from bit_axon.utils.cache import ArraysCache, KVCache
@@ -29,13 +28,9 @@ def test_swa_small_window():
     for i in range(32):
         for j in range(32):
             if j > i or j < i - window_size + 1:
-                assert mask_val[i, j].item() == 0.0, (
-                    f"Position ({i},{j}) should be masked"
-                )
+                assert mask_val[i, j].item() == 0.0, f"Position ({i},{j}) should be masked"
             else:
-                assert mask_val[i, j].item() == 1.0, (
-                    f"Position ({i},{j}) should be visible"
-                )
+                assert mask_val[i, j].item() == 1.0, f"Position ({i},{j}) should be visible"
 
 
 def test_kv_cache_update():

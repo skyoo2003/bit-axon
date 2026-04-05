@@ -11,9 +11,7 @@ class BitAxonModel(nn.Module):
         super().__init__()
         self.config = config
         self.embed_tokens = nn.Embedding(config.vocab_size, config.d_source_model)
-        self.input_proj = nn.Linear(
-            config.d_source_model, config.hidden_dim, bias=False
-        )
+        self.input_proj = nn.Linear(config.d_source_model, config.hidden_dim, bias=False)
 
         for i in range(config.num_layers):
             layer_type = self._get_layer_type(i, config.num_layers)
@@ -25,9 +23,7 @@ class BitAxonModel(nn.Module):
                 layer = AxonSSMMoEBlock(config)
             setattr(self, f"layer_{i}", layer)
 
-        self.output_proj = nn.Linear(
-            config.hidden_dim, config.d_source_model, bias=False
-        )
+        self.output_proj = nn.Linear(config.hidden_dim, config.d_source_model, bias=False)
         self.lm_head = nn.Linear(config.d_source_model, config.vocab_size, bias=False)
         if config.weight_tying:
             self.lm_head.weight = self.embed_tokens.weight

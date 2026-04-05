@@ -1,7 +1,5 @@
 """Tests for BitAxonConfig."""
 
-import pytest
-
 from bit_axon.config import BitAxonConfig
 
 

@@ -32,9 +32,7 @@ def small_config() -> BitAxonConfig:
 @pytest.fixture
 def batch_input(default_config: BitAxonConfig) -> mx.array:
     """Random batch of token IDs (batch=1, seq_len=128)."""
-    return mx.random.randint(
-        0, default_config.vocab_size, shape=(1, 128), dtype=mx.uint32
-    )
+    return mx.random.randint(0, default_config.vocab_size, shape=(1, 128), dtype=mx.uint32)
 
 
 @pytest.fixture

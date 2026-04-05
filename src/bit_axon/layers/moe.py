@@ -7,9 +7,7 @@ def swiglu(x: mx.array, gate: mx.array) -> mx.array:
 
 
 class SwitchLinear(nn.Module):
-    def __init__(
-        self, input_dims: int, output_dims: int, num_experts: int, bias: bool = True
-    ):
+    def __init__(self, input_dims: int, output_dims: int, num_experts: int, bias: bool = True):
         super().__init__()
         scale = (1.0 / input_dims) ** 0.5
         self.weight = mx.random.uniform(
@@ -17,9 +15,7 @@ class SwitchLinear(nn.Module):
         )
         self.bias = mx.zeros((num_experts, output_dims)) if bias else None
 
-    def __call__(
-        self, x: mx.array, indices: mx.array, sorted_indices: bool = False
-    ) -> mx.array:
+    def __call__(self, x: mx.array, indices: mx.array, sorted_indices: bool = False) -> mx.array:
         B, L, K = indices.shape
         D = x.shape[-1]
         flat_idx = indices.reshape(-1)
@@ -29,9 +25,7 @@ class SwitchLinear(nn.Module):
         x_flat = x.reshape(-1, 1, D)
 
         w_t = self.weight.swapaxes(-1, -2)
-        out = mx.gather_mm(
-            x_flat, w_t, rhs_indices=flat_idx, sorted_indices=sorted_indices
-        )
+        out = mx.gather_mm(x_flat, w_t, rhs_indices=flat_idx, sorted_indices=sorted_indices)
         out = out.squeeze(-2)
         out = out.reshape(B, L, K, -1)
         if self.bias is not None:
@@ -40,7 +34,6 @@ class SwitchLinear(nn.Module):
 
 
 def _gather_sort(x, indices):
-    M = indices.shape[-1]
     indices = indices.flatten()
     order = mx.argsort(indices)
     inv_order = mx.argsort(order)
@@ -55,9 +48,7 @@ def _scatter_unsort(x, inv_order, shape=None):
 
 
 class SwitchGLU(nn.Module):
-    def __init__(
-        self, input_dims: int, hidden_dims: int, num_experts: int, bias: bool = False
-    ):
+    def __init__(self, input_dims: int, hidden_dims: int, num_experts: int, bias: bool = False):
         super().__init__()
         self.gate_proj = SwitchLinear(input_dims, hidden_dims, num_experts, bias=bias)
         self.up_proj = SwitchLinear(input_dims, hidden_dims, num_experts, bias=bias)
