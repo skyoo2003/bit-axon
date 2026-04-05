@@ -60,3 +60,7 @@ checkpoints/
 
 # Node (if any tooling)
 node_modules/
+
+# Project-related
+docs/specs/
+docs/plans/
