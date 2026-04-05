@@ -11,6 +11,7 @@ dependencies = ["mlx>=0.31.0", "numpy>=1.24"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "pytest-xdist"]
+training = ["tokenizers>=0.13", "huggingface_hub>=0.16"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
