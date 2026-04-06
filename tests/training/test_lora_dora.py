@@ -87,7 +87,5 @@ class TestDoRALinear:
             out = dora(x)
             return out.sum()
 
-        a_grad, b_grad, m_grad = mx.grad(loss_fn, argnums=[0, 1, 2])(
-            dora.lora_a, dora.lora_b, dora.m
-        )
+        a_grad, b_grad, m_grad = mx.grad(loss_fn, argnums=[0, 1, 2])(dora.lora_a, dora.lora_b, dora.m)
         assert a_grad is not None and b_grad is not None and m_grad is not None

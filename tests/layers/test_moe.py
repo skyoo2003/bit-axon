@@ -89,9 +89,7 @@ class TestMLP:
 class TestSharedExpertMoE:
     def test_moe_output_shape(self, default_config: BitAxonConfig):
         cfg = default_config
-        moe = SharedExpertMoE(
-            cfg.hidden_dim, cfg.moe_intermediate_dim, cfg.moe_num_experts, cfg.moe_top_k
-        )
+        moe = SharedExpertMoE(cfg.hidden_dim, cfg.moe_intermediate_dim, cfg.moe_num_experts, cfg.moe_top_k)
         x = mx.random.normal((1, 128, cfg.hidden_dim))
         out = moe(x)
         mx.eval(out)
@@ -99,9 +97,7 @@ class TestSharedExpertMoE:
 
     def test_routing_indices(self, default_config: BitAxonConfig):
         cfg = default_config
-        moe = SharedExpertMoE(
-            cfg.hidden_dim, cfg.moe_intermediate_dim, cfg.moe_num_experts, cfg.moe_top_k
-        )
+        moe = SharedExpertMoE(cfg.hidden_dim, cfg.moe_intermediate_dim, cfg.moe_num_experts, cfg.moe_top_k)
         x = mx.random.normal((1, 128, cfg.hidden_dim))
         gates = moe.gate(x)
         gates = mx.softmax(gates, axis=-1)
@@ -114,9 +110,7 @@ class TestSharedExpertMoE:
 
     def test_shared_expert_active(self, default_config: BitAxonConfig):
         cfg = default_config
-        moe = SharedExpertMoE(
-            cfg.hidden_dim, cfg.moe_intermediate_dim, cfg.moe_num_experts, cfg.moe_top_k
-        )
+        moe = SharedExpertMoE(cfg.hidden_dim, cfg.moe_intermediate_dim, cfg.moe_num_experts, cfg.moe_top_k)
         x = mx.random.normal((1, 8, cfg.hidden_dim))
         shared_out = moe.shared_expert(x)
         shared_gate = mx.sigmoid(moe.shared_expert_gate(x))
@@ -128,13 +122,7 @@ class TestSharedExpertMoE:
     def test_no_numpy_in_forward(self):
         import pathlib
 
-        moe_src = (
-            pathlib.Path(__file__).resolve().parent.parent.parent
-            / "src"
-            / "bit_axon"
-            / "layers"
-            / "moe.py"
-        )
+        moe_src = pathlib.Path(__file__).resolve().parent.parent.parent / "src" / "bit_axon" / "layers" / "moe.py"
         content = moe_src.read_text()
         lines = content.split("\n")
         forward_lines = []
@@ -152,9 +140,7 @@ class TestSharedExpertMoE:
 
     def test_gradient_flow(self, default_config: BitAxonConfig):
         cfg = default_config
-        moe = SharedExpertMoE(
-            cfg.hidden_dim, cfg.moe_intermediate_dim, cfg.moe_num_experts, cfg.moe_top_k
-        )
+        moe = SharedExpertMoE(cfg.hidden_dim, cfg.moe_intermediate_dim, cfg.moe_num_experts, cfg.moe_top_k)
         x = mx.random.normal((1, 8, cfg.hidden_dim))
 
         def loss_fn(m, x):
@@ -170,9 +156,7 @@ class TestSharedExpertMoE:
 
     def test_small_config(self, small_config: BitAxonConfig):
         cfg = small_config
-        moe = SharedExpertMoE(
-            cfg.hidden_dim, cfg.moe_intermediate_dim, cfg.moe_num_experts, cfg.moe_top_k
-        )
+        moe = SharedExpertMoE(cfg.hidden_dim, cfg.moe_intermediate_dim, cfg.moe_num_experts, cfg.moe_top_k)
         x = mx.random.normal((1, 8, cfg.hidden_dim))
         out = moe(x)
         mx.eval(out)

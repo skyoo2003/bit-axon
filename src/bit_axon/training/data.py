@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 from bit_axon.training.tokenizer import QwenTokenizerWrapper
 
@@ -12,7 +12,7 @@ def stream_jsonl(path: str | Path) -> Iterator[dict[str, object]]:
 
     Skips empty lines and lines that fail JSON parsing.
     """
-    with open(path, "r") as f:
+    with open(path) as f:
         for line in f:
             line = line.strip()
             if line:

@@ -1,7 +1,6 @@
 import json
 
 import mlx.core as mx
-import pytest
 
 from bit_axon.model import BitAxonModel
 from bit_axon.training.collate import iterate_batches

@@ -1,5 +1,3 @@
-import pytest
-
 from bit_axon.training.packing import PackedBatch, SequencePacker
 
 MAX_SEQ_LEN = 16

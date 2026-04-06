@@ -28,9 +28,7 @@ class AxonSWAMoEBlock(nn.Module):
     def __init__(self, config: BitAxonConfig):
         super().__init__()
         self.input_norm = RMSNorm(config.hidden_dim, config.rms_norm_eps)
-        self.attention = SlidingWindowAttention(
-            config.hidden_dim, config.num_heads, config.swa_window_size
-        )
+        self.attention = SlidingWindowAttention(config.hidden_dim, config.num_heads, config.swa_window_size)
         self.post_attention_norm = RMSNorm(config.hidden_dim, config.rms_norm_eps)
         self.moe = SharedExpertMoE(
             config.hidden_dim,

@@ -1,5 +1,4 @@
 import mlx.core as mx
-import pytest
 
 from bit_axon.training.loss import cross_entropy_loss
 
@@ -74,8 +73,8 @@ class TestCrossEntropyLoss:
         logits = mx.random.normal(shape=(1, V))
         labels = mx.array([3])
 
-        def fn(l):
-            return cross_entropy_loss(l, labels)[0]
+        def fn(logits_in):
+            return cross_entropy_loss(logits_in, labels)[0]
 
         grads = mx.grad(fn)(logits)
         mx.eval(grads)

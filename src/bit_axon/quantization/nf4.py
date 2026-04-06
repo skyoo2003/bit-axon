@@ -18,9 +18,7 @@ def replace_linear_with_quantized(module: nn.Module, group_size: int = 64, bits:
                 new_list = []
                 for item in child:
                     if isinstance(item, nn.Linear):
-                        new_list.append(
-                            nn.QuantizedLinear.from_linear(item, group_size=group_size, bits=bits)
-                        )
+                        new_list.append(nn.QuantizedLinear.from_linear(item, group_size=group_size, bits=bits))
                     else:
                         _replace_submodules(item)
                         new_list.append(item)
