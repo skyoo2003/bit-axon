@@ -1,4 +1,4 @@
-# Bit-Axon 3B
+# Bit-Axon
 
 **Minimal Bits, Maximal Impulse**
 
@@ -116,14 +116,14 @@ The returned `caches` list contains KV cache objects for SWA layers (9 through 1
 
 ## CLI Commands
 
-| Command | Description |
-|---------|-------------|
-| `bit-axon run "prompt"` | Run LLM inference |
-| `bit-axon train data.json` | Fine-tune with SFT (thermal-aware QLoRA) |
-| `bit-axon quantize ./model` | Quantize model weights |
-| `bit-axon merge --base-model ./model --adapter ./adapter` | Merge LoRA/DoRA adapters |
-| `bit-axon benchmark` | Benchmark model performance |
-| `bit-axon download [repo]` | Download model from HuggingFace Hub |
+| Command                                                   | Description                              |
+| --------------------------------------------------------- | ---------------------------------------- |
+| `bit-axon run "prompt"`                                   | Run LLM inference                        |
+| `bit-axon train data.json`                                | Fine-tune with SFT (thermal-aware QLoRA) |
+| `bit-axon quantize ./model`                               | Quantize model weights                   |
+| `bit-axon merge --base-model ./model --adapter ./adapter` | Merge LoRA/DoRA adapters                 |
+| `bit-axon benchmark`                                      | Benchmark model performance              |
+| `bit-axon download [repo]`                                | Download model from HuggingFace Hub      |
 
 Use `bit-axon <command> --help` for full options.
 
@@ -140,6 +140,7 @@ open BitAxonApp.xcodeproj  # or open in Xcode
 ```
 
 Features:
+
 - Real-time token streaming
 - Token speed and GPU memory monitoring
 - Drag-and-drop fine-tuning
