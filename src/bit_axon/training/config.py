@@ -37,6 +37,10 @@ class TrainingConfig:
     )
     use_dora: bool = True
 
+    # ORPO alignment
+    beta: float = 0.1
+    training_mode: str = "sft"  # "sft" or "orpo"
+
     # Quantization
     quantize_bits: int = 4
     quantize_group_size: int = 64

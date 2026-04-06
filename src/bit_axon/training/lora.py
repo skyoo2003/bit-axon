@@ -39,6 +39,15 @@ class LoRALinear(nn.Module):
 
     def fuse(self, dequantize=False):
         weight = self.linear.weight
+        is_quantized = isinstance(self.linear, nn.QuantizedLinear)
+        if dequantize and is_quantized:
+            weight = mx.dequantize(
+                weight,
+                self.linear.scales,
+                self.linear.biases,
+                self.linear.group_size,
+                self.linear.bits,
+            )
         bias = self.linear.bias if "bias" in self.linear else None
         delta = ((self.scale * self.lora_b.T) @ self.lora_a.T).astype(weight.dtype)
         fused = nn.Linear(weight.shape[1], weight.shape[0], bias=bias is not None)
