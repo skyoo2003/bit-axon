@@ -27,6 +27,9 @@ source .venv/bin/activate
 # Install in editable mode with dev dependencies
 pip install -e ".[dev]"
 
+# Install pre-commit hooks
+pre-commit install
+
 # Verify the installation
 python -c "import bit_axon; print(bit_axon.__version__)"
 ```
