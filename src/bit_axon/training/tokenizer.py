@@ -78,7 +78,7 @@ class QwenTokenizerWrapper:
     @property
     def pad_token_id(self) -> int:
         """Return the pad token ID (endoftext, 151643 for Qwen2.5)."""
-        token_id = self._vocab.get("<｜end▁of▁text｜>")
+        token_id = self._vocab.get("<｜end▁of▁text｜>")  # noqa: RUF001
         if token_id is None:
             token_id = self._vocab.get("<|endoftext|>", 0)
         return token_id

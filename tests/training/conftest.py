@@ -13,7 +13,7 @@ def _bytes_to_unicode() -> dict[int, str]:
             bs.append(b)
             cs.append(256 + n)
             n += 1
-    return dict(zip(bs, [chr(c) for c in cs]))
+    return dict(zip(bs, [chr(c) for c in cs], strict=True))
 
 
 @pytest.fixture
@@ -26,7 +26,7 @@ def test_tokenizer(tmp_path):
 
     tok.add_special_tokens(
         [
-            AddedToken("<｜end▁of▁text｜>", special=True),
+            AddedToken("<｜end▁of▁text｜>", special=True),  # noqa: RUF001
             AddedToken("<|im_start|>", special=True),
             AddedToken("<|im_end|>", special=True),
         ]

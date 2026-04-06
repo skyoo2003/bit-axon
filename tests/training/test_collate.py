@@ -130,7 +130,7 @@ class TestIterateBatches:
         gen = iterate_batches(dataset, batch_size=1, max_seq_len=128, shuffle=False, loop=True)
         results = [next(gen) for _ in range(3)]
         assert len(results) == 3
-        for input_ids, labels in results:
+        for input_ids, _labels in results:
             assert input_ids.shape[0] == 1
             assert input_ids.shape[1] == 127
 
@@ -152,7 +152,7 @@ class TestIterateBatches:
 
     def test_batch_size_1(self, test_tokenizer, small_sft_jsonl):
         dataset = SFTDataset(data=str(small_sft_jsonl), tokenizer=test_tokenizer, max_seq_len=128)
-        for input_ids, labels in iterate_batches(dataset, batch_size=1, max_seq_len=128, shuffle=False):
+        for input_ids, _labels in iterate_batches(dataset, batch_size=1, max_seq_len=128, shuffle=False):
             assert input_ids.shape[0] == 1
 
     def test_small_max_seq_len(self, test_tokenizer, small_sft_jsonl):
@@ -165,8 +165,7 @@ class TestIterateBatches:
 
     def test_empty_dataset(self, test_tokenizer, tmp_path):
         path = tmp_path / "empty.jsonl"
-        with open(path, "w") as f:
-            pass
+        open(path, "w").close()
         dataset = SFTDataset(data=str(path), tokenizer=test_tokenizer, max_seq_len=128)
         batches = list(iterate_batches(dataset, batch_size=1, max_seq_len=128))
         assert len(batches) == 0
