@@ -29,7 +29,11 @@ class DoRALinear(nn.Module):
 
     @staticmethod
     def from_base(linear, r=8, dropout=0.0, scale=20.0):
-        output_dims, input_dims = linear.weight.shape
+        if isinstance(linear, nn.QuantizedLinear):
+            output_dims = linear.weight.shape[0]
+            input_dims = linear.weight.shape[1] * 32 // linear.bits
+        else:
+            output_dims, input_dims = linear.weight.shape
         dora = DoRALinear(
             input_dims,
             output_dims,
