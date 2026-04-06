@@ -10,9 +10,16 @@ from __future__ import annotations
 
 import argparse
 import sys
+import warnings
 from pathlib import Path
 
 import mlx.core as mx
+
+warnings.warn(
+    "This script is deprecated. Use the `bit-axon` CLI instead. Run `pip install -e .` and then `bit-axon --help` for available commands.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 def _make_mock_qwen(config) -> dict[str, mx.array]:

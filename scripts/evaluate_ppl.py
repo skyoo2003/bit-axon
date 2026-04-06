@@ -11,9 +11,16 @@ from __future__ import annotations
 import argparse
 import math
 import sys
+import warnings
 
 import mlx.core as mx
 import mlx.nn as nn
+
+warnings.warn(
+    "This script is deprecated. Use the `bit-axon` CLI instead. Run `pip install -e .` and then `bit-axon --help` for available commands.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 def _compute_loss(model, token_ids):

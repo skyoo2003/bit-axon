@@ -9,6 +9,13 @@ Usage:
 
 import argparse
 import sys
+import warnings
+
+warnings.warn(
+    "This script is deprecated. Use the `bit-axon` CLI instead. Run `pip install -e .` and then `bit-axon --help` for available commands.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 def main():
