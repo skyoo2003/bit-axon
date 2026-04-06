@@ -1,6 +1,6 @@
 import mlx.core as mx
 
-from bit_axon.training.tokenizer import QwenTokenizerWrapper
+from bit_axon.tokenizer import QwenTokenizerWrapper
 
 
 class TestQwenTokenizerWrapper:

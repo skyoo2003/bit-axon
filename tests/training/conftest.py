@@ -1,7 +1,7 @@
 import pytest
 from tokenizers import AddedToken, Tokenizer, decoders, models, pre_tokenizers
 
-from bit_axon.training.tokenizer import QwenTokenizerWrapper
+from bit_axon.tokenizer import QwenTokenizerWrapper
 
 
 def _bytes_to_unicode() -> dict[int, str]:

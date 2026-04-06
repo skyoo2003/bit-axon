@@ -10,6 +10,13 @@ Requires sudo for thermal monitoring (powermetrics). Use --no-thermal to disable
 """
 
 import argparse
+import warnings
+
+warnings.warn(
+    "This script is deprecated. Use the `bit-axon` CLI instead. Run `pip install -e .` and then `bit-axon --help` for available commands.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 def main():
@@ -51,11 +58,12 @@ def main():
     from bit_axon.config import BitAxonConfig
     from bit_axon.model import BitAxonModel
     from bit_axon.quantization.nf4 import replace_linear_with_quantized
+    from bit_axon.tokenizer import QwenTokenizerWrapper
     from bit_axon.training.checkpoint import save_adapter_only
     from bit_axon.training.config import TrainingConfig
     from bit_axon.training.cooling import CoolingScheduler, ThermalPolicy
     from bit_axon.training.data import SFTDataset
-    from bit_axon.training.lora import QwenTokenizerWrapper, apply_lora_to_model
+    from bit_axon.training.lora import apply_lora_to_model
     from bit_axon.training.trainer import Trainer
 
     # 1. Build config

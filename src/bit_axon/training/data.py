@@ -4,7 +4,7 @@ import json
 from collections.abc import Iterator
 from pathlib import Path
 
-from bit_axon.training.tokenizer import QwenTokenizerWrapper
+from bit_axon.tokenizer import QwenTokenizerWrapper
 
 
 def stream_jsonl(path: str | Path) -> Iterator[dict[str, object]]:
