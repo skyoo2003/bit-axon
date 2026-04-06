@@ -47,6 +47,7 @@ ignore = [
   "N803",   # argument name should be lowercase (x, y, z are standard in ML)
   "N806",   # variable in function should be lowercase (B, D, E, K, L are ML conventions)
   "RUF059", # unpacked variable never used (common in shape unpacking: B, L, D = x.shape)
+  "SIM108", # if-else-block can be replaced with ternary (less readable for multi-line configs)
 ]
 
 [tool.ruff.lint.isort]

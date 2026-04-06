@@ -62,5 +62,5 @@ checkpoints/
 node_modules/
 
 # Project-related
-docs/specs/
-docs/plans/
+/docs/specs/
+/docs/plans/
