@@ -87,13 +87,15 @@ class ThermalMonitor:
         """Check if temperature trend is rising over the last N readings.
 
         Uses simple linear regression slope. Returns False if fewer than
-        3 readings available or if temperature data is unavailable.
+        2 readings are available in the window.
         """
         with self._lock:
             history = list(self._history)
-        if len(history) < 3 or window < 2:
+        if window < 2:
             return False
         recent = history[-window:]
+        if len(recent) < 2:
+            return False
         n = len(recent)
         x_mean = (n - 1) / 2.0
         y_mean = sum(recent) / n
