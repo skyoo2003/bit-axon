@@ -32,7 +32,7 @@ dependencies = [
 bit-axon = "bit_axon.cli.main:main"
 
 [project.optional-dependencies]
-dev = ["pre-commit>=4.1", "pytest>=7.0", "pytest-xdist>=3.0", "ruff>=0.9"]
+dev = ["pre-commit>=4.1", "pytest>=7.0", "pytest-xdist>=3.0", "ruff>=0.9", "datasets>=2.14"]
 training = ["tokenizers>=0.13", "huggingface_hub>=0.16"]
 porting = ["tokenizers>=0.13", "huggingface_hub>=0.16"]
 evaluation = ["datasets>=2.14"]
