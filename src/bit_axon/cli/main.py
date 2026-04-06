@@ -178,6 +178,61 @@ def download(
     download_cmd(repo_id, local_dir, include)
 
 
+@app.command()
+def evaluate(
+    model_path: Annotated[str, typer.Argument(help="Path to model weights")],
+    config_small: Annotated[bool, typer.Option("--config-small", help="Use small model for testing")] = False,
+    max_tokens: Annotated[int, typer.Option("--max-tokens", help="Max tokens to evaluate")] = 100_000,
+    seq_length: Annotated[int, typer.Option("--seq-length", help="Sequence length for evaluation")] = 2048,
+    tokenizer: Annotated[str | None, typer.Option("--tokenizer", "-t", help="Tokenizer path or HF repo ID")] = None,
+    batch_size: Annotated[int, typer.Option("--batch-size", help="Batch size")] = 4,
+) -> None:
+    """Evaluate model perplexity on WikiText-103."""
+    from bit_axon.cli.evaluate import evaluate_cmd
+
+    evaluate_cmd(model_path, config_small, max_tokens, seq_length, tokenizer, batch_size)
+
+
+@app.command(name="port-weights")
+def port_weights(
+    output: Annotated[str, typer.Argument(help="Output directory for ported weights")],
+    config_small: Annotated[bool, typer.Option("--config-small", help="Use small config with mock weights")] = False,
+) -> None:
+    """Port Qwen2.5-3B weights to Bit-Axon model format."""
+    from bit_axon.cli.port_weights import port_weights_cmd
+
+    port_weights_cmd(output, config_small)
+
+
+@app.command()
+def pipeline(
+    output_dir: Annotated[str, typer.Option("--output-dir", "-o", help="Output directory for pipeline artifacts")] = "pipeline_output",
+    max_steps: Annotated[int, typer.Option("--max-steps", help="Maximum SFT training steps")] = 100,
+    orpo_steps: Annotated[int, typer.Option("--orpo-steps", help="Maximum ORPO training steps")] = 50,
+    max_seq_len: Annotated[int, typer.Option("--max-seq-len", help="Maximum sequence length")] = 32,
+    lora_rank: Annotated[int, typer.Option("--lora-rank", help="LoRA adapter rank")] = 8,
+    batch_size: Annotated[int, typer.Option("--batch-size", help="Batch size")] = 1,
+) -> None:
+    """Run full ML pipeline: SFT, merge, quantize, evaluate, ORPO."""
+    from bit_axon.cli.pipeline import pipeline_cmd
+
+    pipeline_cmd(output_dir, max_steps, orpo_steps, max_seq_len, lora_rank, batch_size)
+
+
+@app.command()
+def prepare(
+    dataset: Annotated[str, typer.Argument(help="HuggingFace dataset identifier")],
+    format: Annotated[str, typer.Option("--format", "-f", help="Output format")] = "messages",
+    output: Annotated[str, typer.Option("--output", "-o", help="Output JSONL file path")] = "",
+    split: Annotated[str, typer.Option("--split", help="Dataset split")] = "train",
+    limit: Annotated[int | None, typer.Option("--limit", help="Max rows to convert")] = None,
+) -> None:
+    """Convert HuggingFace dataset to JSONL for training."""
+    from bit_axon.cli.prepare import prepare_cmd
+
+    prepare_cmd(dataset, format, output, split, limit)
+
+
 def main() -> None:
     """Entry point for the bit-axon CLI."""
     app()

@@ -1,3 +1,5 @@
+import re
+
 from typer.testing import CliRunner
 
 from bit_axon.cli.main import app
@@ -5,11 +7,16 @@ from bit_axon.cli.main import app
 runner = CliRunner()
 
 
+def _strip_ansi(text: str) -> str:
+    return re.sub(r"\x1b\[[0-9;]*m", "", text)
+
+
 class TestCLIBenchmark:
     def test_help(self):
         result = runner.invoke(app, ["benchmark", "--help"])
         assert result.exit_code == 0
-        assert "seq-lengths" in result.output.lower() or "seq_lengths" in result.output.lower()
+        clean = _strip_ansi(result.output).lower()
+        assert "seq-lengths" in clean or "seq_lengths" in clean
 
     def test_config_small(self):
         result = runner.invoke(app, ["benchmark", "--config-small", "--seq-lengths", "64,128", "--iterations", "1", "--warmup", "0"])
