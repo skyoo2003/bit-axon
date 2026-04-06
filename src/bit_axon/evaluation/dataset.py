@@ -29,8 +29,15 @@ class WikiTextDataset:
     Tokenizes at character level and splits into fixed-length chunks.
     """
 
-    def __init__(self, split: str = "test", seq_length: int = 2048, max_tokens: int = 100_000):
+    def __init__(
+        self,
+        split: str = "test",
+        seq_length: int = 2048,
+        max_tokens: int = 100_000,
+        tokenizer=None,
+    ):
         self.seq_length = seq_length
+        self._tokenizer = tokenizer
         raw_text = self._load_text(split)
         token_ids = self._tokenize(raw_text, max_tokens)
         self.chunks = self._chunk(token_ids, seq_length)
@@ -45,6 +52,9 @@ class WikiTextDataset:
             return _FALLBACK_TEXT * 100
 
     def _tokenize(self, text: str, max_tokens: int) -> list[int]:
+        if self._tokenizer is not None:
+            token_ids = self._tokenizer.encode(text)
+            return token_ids[:max_tokens]
         token_ids = [ord(c) % 256 for c in text]
         return token_ids[:max_tokens]
 

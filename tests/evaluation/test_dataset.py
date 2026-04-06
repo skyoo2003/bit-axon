@@ -29,3 +29,49 @@ def test_dataset_no_empty_chunks():
     for i in range(len(ds)):
         chunk = ds[i]
         assert chunk.size > 0
+
+
+def test_with_tokenizer_uses_encode():
+    class MockTokenizer:
+        vocab_size = 1000
+
+        def encode(self, text):
+            return [hash(c) % self.vocab_size for c in text]
+
+    ds = WikiTextDataset(split="test", seq_length=64, max_tokens=128, tokenizer=MockTokenizer())
+    assert len(ds) >= 1
+    chunk = ds[0]
+    tokens = chunk.tolist()
+    assert any(t > 255 for t in tokens)
+
+
+def test_without_tokenizer_backward_compat():
+    ds = WikiTextDataset(split="test", seq_length=64, max_tokens=128)
+    chunk = ds[0]
+    tokens = chunk.tolist()
+    assert all(0 <= t <= 255 for t in tokens)
+
+
+def test_with_tokenizer_chunk_shape():
+    class MockTokenizer:
+        vocab_size = 500
+
+        def encode(self, text):
+            return [i % self.vocab_size for i in range(len(text))]
+
+    ds = WikiTextDataset(split="test", seq_length=32, max_tokens=128, tokenizer=MockTokenizer())
+    if len(ds) > 0:
+        assert ds[0].shape == (32,)
+
+
+def test_with_tokenizer_ids_in_vocab_range():
+    class MockTokenizer:
+        vocab_size = 1000
+
+        def encode(self, text):
+            return [i % self.vocab_size for i in range(len(text))]
+
+    ds = WikiTextDataset(split="test", seq_length=64, max_tokens=128, tokenizer=MockTokenizer())
+    for i in range(min(len(ds), 3)):
+        tokens = ds[i].tolist()
+        assert all(0 <= t < 1000 for t in tokens)
