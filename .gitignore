@@ -1,16 +1,20 @@
 # Python
 __pycache__/
 *.py[cod]
+*.pyo
 *$py.class
 *.so
-*.egg-info/
+
+# Packaging / Distribution
 *.egg
+*.egg-info/
+*.whl
+*.tar.gz
 dist/
 build/
 develop-eggs/
 .installed.cfg
 sdist/
-*.whl
 
 # Virtual environments
 .venv/
@@ -24,7 +28,7 @@ htmlcov/
 .tox/
 .nox/
 
-# Linting
+# Linting / Formatting
 .ruff_cache/
 
 # Type checking
@@ -34,19 +38,36 @@ htmlcov/
 *.safetensors
 *.gguf
 *.bin
+*.pt
+*.pth
+*.onnx
+*.ckpt
+*.mlx/
+*.mlmodel
+*.mlpackage/
 checkpoints/
+wandb/
+runs/
+
+# HuggingFace cache
+model/.cache/
 
 # macOS
 .DS_Store
+._*
 .AppleDouble
 .LSOverride
+.Spotlight-V100
+.Trashes
 
 # IDEs
 .idea/
 .vscode/
+.fleet/
 *.swp
 *.swo
 *~
+*.iml
 
 # Jupyter
 .ipynb_checkpoints/
@@ -54,17 +75,31 @@ checkpoints/
 # Environment
 .env
 .env.local
-
-# Distribution
-*.tar.gz
+.env.*.local
 
 # Node (if any tooling)
 node_modules/
 
+# Swift / Xcode
+BitAxonApp/.build/
+BitAxonApp/.swiftpm/xcode/
+xcuserdata/
+DerivedData/
+*.dSYM/
+*.ipa
+*.moved-aside
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.hmap
+*.xccheckout
+*.xcscmblueprint
+
+# Logs
+*.log
+
 # Project-related
 /docs/specs/
 /docs/plans/
-
-# Swift / BitAxonApp
-BitAxonApp/.build/
 BitAxonApp/Tests/EquivalenceTests/EquivalenceTestSupport/reference/
