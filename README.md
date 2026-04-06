@@ -86,18 +86,24 @@ Requires Python 3.10+ and an Apple Silicon Mac with MLX installed. The `mlx` and
 
 ## Quick Start
 
+### CLI
+
+```bash
+pip install bit-axon
+bit-axon download skyoo2003/bit-axon
+bit-axon run "Hello, world!"
+bit-axon run --chat  # Interactive chat mode
+```
+
+### Python API
+
 ```python
 import mlx.core as mx
-from bit_axon.config import BitAxonConfig
-from bit_axon.model import BitAxonModel
+from bit_axon import BitAxonConfig, BitAxonModel
 
-# Load default configuration
 config = BitAxonConfig()
-
-# Build the model
 model = BitAxonModel(config)
 
-# Run a forward pass
 input_ids = mx.array([[1, 42, 100, 200, 500]])
 logits, caches = model(input_ids)
 
@@ -105,6 +111,38 @@ print(f"Output shape: {logits.shape}")  # (1, 5, 32000)
 ```
 
 The returned `caches` list contains KV cache objects for SWA layers (9 through 16) and `None` for SSM-only layers, since SSM layers maintain internal state without external caching.
+
+---
+
+## CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `bit-axon run "prompt"` | Run LLM inference |
+| `bit-axon train data.json` | Fine-tune with SFT (thermal-aware QLoRA) |
+| `bit-axon quantize ./model` | Quantize model weights |
+| `bit-axon merge --base-model ./model --adapter ./adapter` | Merge LoRA/DoRA adapters |
+| `bit-axon benchmark` | Benchmark model performance |
+| `bit-axon download [repo]` | Download model from HuggingFace Hub |
+
+Use `bit-axon <command> --help` for full options.
+
+---
+
+## macOS App
+
+Bit-Axon includes a native SwiftUI app for real-time chat on Apple Silicon.
+
+```bash
+cd BitAxonApp
+swift build
+open BitAxonApp.xcodeproj  # or open in Xcode
+```
+
+Features:
+- Real-time token streaming
+- Token speed and GPU memory monitoring
+- Drag-and-drop fine-tuning
 
 ---
 

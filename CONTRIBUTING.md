@@ -129,6 +129,53 @@ class MyLayer(nn.Module):
         return x @ self.weight
 ```
 
+## CLI Development
+
+The CLI is built with [Typer](https://typer.tiangolo.com/) and [Rich](https://rich.readthedocs.io/).
+
+### Adding a new CLI command
+
+1. Create `src/bit_axon/cli/<command>.py` with a function implementing the command logic
+2. Register in `src/bit_axon/cli/main.py` using `@app.command()`:
+   ```python
+   @app.command()
+   def mycommand(...):
+       from bit_axon.cli.mycommand import mycommand_impl
+       mycommand_impl(...)
+   ```
+3. Add tests in `tests/cli/test_<command>.py` using `typer.testing.CliRunner`
+4. All imports must be lazy (inside functions) to avoid loading MLX for `--help`
+
+### CLI conventions
+
+- Use `--config-small` flag for testing without real models
+- Use Rich console for output (spinners, progress bars, tables)
+- Lazy import ALL bit_axon modules inside command functions
+
+## SwiftUI App Development
+
+The native macOS app lives in `BitAxonApp/` and uses MLX-Swift for inference.
+
+### Building
+
+```bash
+cd BitAxonApp
+swift build
+```
+
+### Architecture
+
+- `Models/` — BitAxonConfig, BitAxonModel, layer ports (AxonSSM, AxonSWA, AxonMoE)
+- `ViewModels/` — ChatViewModel, DeviceStat
+- `Views/` — ChatView, MetricsView
+- `Services/` — ModelService, FineTuneBridge
+
+### Key APIs
+
+- MLX-Swift: `MLXArray`, `MLXNN.Module`, `softmax`, `matmul`
+- `@ModuleInfo(key: "name")` for weight naming
+- `MLXNN.Memory.snapshot()` for GPU stats
+
 ## Commit Messages
 
 We follow [Conventional Commits](https://www.conventionalcommits.org/). The format:
