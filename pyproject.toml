@@ -1,18 +1,37 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "bit-axon"
 version = "0.1.0"
 description = "Bit-Axon 3B: Minimal Bits, Maximal Impulse — sLLM engine for Apple Silicon"
+readme = "README.md"
+license = "MIT"
 requires-python = ">=3.10"
-dependencies = ["mlx>=0.31.0", "numpy>=1.24"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Typing :: Typed",
+]
+dependencies = [
+  "mlx>=0.31.0,<1",
+  "numpy>=1.24,<3",
+  "tokenizers>=0.13",
+  "huggingface_hub>=0.16",
+]
 
 [project.optional-dependencies]
-dev = ["pre-commit>=4.1", "pytest>=7.0", "pytest-xdist", "ruff>=0.9"]
+dev = ["pre-commit>=4.1", "pytest>=7.0", "pytest-xdist>=3.0", "ruff>=0.9"]
 training = ["tokenizers>=0.13", "huggingface_hub>=0.16"]
-porting = ["huggingface_hub>=0.16", "tokenizers>=0.13"]
+porting = ["tokenizers>=0.13", "huggingface_hub>=0.16"]
+evaluation = ["datasets>=2.14"]
+all = ["bit-axon[dev,training,porting,evaluation]"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
