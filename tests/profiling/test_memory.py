@@ -1,5 +1,7 @@
 """Tests for memory profiling utilities."""
 
+import gc
+
 import mlx.core as mx
 
 from bit_axon.model import BitAxonModel
@@ -78,6 +80,8 @@ class TestZeroCopy:
         profiler = MemoryProfiler()
         model = BitAxonModel(small_config)
         mx.synchronize()
+        gc.collect()
+        mx.clear_cache()
         weight_info = profiler.profile_model(model)
         active = profiler.active_memory_gb()
         # Active memory should be within 2x of weight memory (generous allowance)
