@@ -281,6 +281,15 @@ Found a bug? Open an issue with a clear title and include:
 
 If you're unsure whether something is a bug, open an issue anyway. We'd rather triage it than miss it.
 
+---
+
+## See also
+
+- [Installation](getting-started/installation.md) — Development environment setup
+- [Architecture Overview](architecture/index.md) — Model design and layer structure
+- [API Reference](api/index.md) — Public Python API documentation
+- [Code of Conduct](https://github.com/skyoo2003/bit-axon/blob/main/CODE_OF_CONDUCT.md) — Community guidelines
+
 ## License
 
 Bit-Axon is released under the [MIT License](https://github.com/skyoo2003/bit-axon/blob/main/LICENSE). By contributing, you agree that your contributions will be licensed under the same terms.

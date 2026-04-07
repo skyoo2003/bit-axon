@@ -256,4 +256,12 @@ def swiglu(x: mx.array, gate: mx.array) -> mx.array:
     return nn.silu(gate) * x
 ```
 
-[← Back to Architecture](index.md)
+---
+
+## See also
+
+- [← Architecture Overview](index.md)
+- [Sandwich Architecture Paper](../papers/sandwich-architecture.md) — Mathematical formulation of the three-zone design
+- [Axon-SSM](axon-ssm.md) — State space model used in layers 1–8 and 17–24
+- [Memory Budget](memory-budget.md) — KV cache memory analysis for SWA layers
+- [API — Layers](../api/layers.md) — `SlidingWindowAttention` and `SharedExpertMoE` Python API

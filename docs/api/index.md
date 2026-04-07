@@ -23,3 +23,12 @@ from bit_axon import BitAxonConfig, BitAxonModel, QwenTokenizerWrapper
 | [`Quantization`](quantization.md) | NF4 weight quantization |
 | [`Profiling`](profiling.md) | Memory, speed, thermal profiling |
 | [`Evaluation`](evaluation.md) | Perplexity computation |
+
+---
+
+## See also
+
+- [Architecture Overview](../architecture/index.md) — Model design and configuration details
+- [CLI Reference](../cli/reference.md) — Command-line interface for all operations
+- [Training Guide](../guides/training.md) — End-to-end fine-tuning walkthrough
+- [Inference Guide](../guides/inference.md) — Generation, chat, and streaming

@@ -205,3 +205,12 @@ Fanless machines (MacBook Air) hit thermal limits faster than actively cooled mo
 - **Close other apps** before benchmarking. GPU memory and thermal headroom are shared across the system. A browser with 50 tabs will skew your numbers.
 - **Run multiple iterations.** A single measurement can be noisy due to OS scheduling and thermal state changes. Five or more iterations give a stable mean.
 - **Use `--config-small` for iteration speed.** When you are debugging the benchmark pipeline itself rather than measuring real performance, the small config loads near-instantly and keeps iteration times under a second.
+
+---
+
+## See also
+
+- [Inference Guide](inference.md) — Run generation and measure output quality
+- [Training Guide](training.md) — Thermal monitoring during training runs
+- [Memory Budget](../architecture/memory-budget.md) — Expected memory ranges for inference
+- [API — Profiling](../api/profiling.md) — `MemoryProfiler`, `SpeedProfiler`, `ThermalMonitor` Python API

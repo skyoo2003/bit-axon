@@ -118,3 +118,6 @@ bit-axon chat --model skyoo2003/bit-axon
 [:material-api: API Reference](api/index.md){ .md-button }
 [:material-laptop: macOS App](macos-app/index.md){ .md-button }
 [:material-school: Guides](guides/training.md){ .md-button }
+[:material-file-document: Papers](papers/index.md){ .md-button }
+[:material-help-circle: FAQ](faq.md){ .md-button }
+[:material-handshake: Contributing](contributing.md){ .md-button }

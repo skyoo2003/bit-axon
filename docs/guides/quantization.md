@@ -329,3 +329,13 @@ model = replace_linear_with_quantized(model, group_size=64, bits=4)
 from bit_axon.training import load_and_merge
 load_and_merge("./base", "./adapter", "./output", quantize_after_merge=True)
 ```
+
+---
+
+## See also
+
+- [Training Guide](training.md) — QLoRA training with quantized base weights
+- [Memory Budget](../architecture/memory-budget.md) — Detailed memory analysis and context length strategy
+- [TurboQuant Paper](../papers/turboquant.md) — Planned KV cache compression for long contexts
+- [CLI Reference](../cli/reference.md) — `quantize` and `merge` command options
+- [API — Quantization](../api/quantization.md) — `quantize_nf4` and `replace_linear_with_quantized` Python API

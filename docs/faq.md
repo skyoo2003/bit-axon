@@ -143,3 +143,12 @@ The merge command automatically dequantizes, merges adapters, and re-quantizes.
 - **GitHub Issues**: [skyoo2003/bit-axon](https://github.com/skyoo2003/bit-axon/issues)
 - **PyPI**: [bit-axon](https://pypi.org/project/bit-axon/)
 - **HuggingFace**: [skyoo2003/bit-axon](https://huggingface.co/skyoo2003/bit-axon)
+
+---
+
+## See also
+
+- [Installation](getting-started/installation.md) — Prerequisites and setup guide
+- [Training Guide](guides/training.md) — Thermal-aware QLoRA fine-tuning
+- [Quantization Guide](guides/quantization.md) — NF4 quantization and memory budgets
+- [Inference Guide](guides/inference.md) — CLI and Python API for generation

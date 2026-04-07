@@ -257,3 +257,13 @@ bit-axon pipeline [OPTIONS]
 5. Run ORPO (odds-ratio preference optimization) on the preference pairs.
 6. Merge the final adapter weights back into the base model.
 7. Write the finished model and a summary report to the output directory.
+
+---
+
+## See also
+
+- [Training Guide](../guides/training.md) — Full fine-tuning walkthrough with examples
+- [Inference Guide](../guides/inference.md) — Generation, chat mode, and streaming
+- [Quantization Guide](../guides/quantization.md) — Weight quantization and adapter merging
+- [Benchmarking Guide](../guides/benchmarking.md) — Performance measurement and interpretation
+- [API Reference](../api/index.md) — Python API for all modules

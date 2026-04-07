@@ -129,3 +129,13 @@ The entire model is built on Apple's MLX framework, not PyTorch:
 | [Axon-SSM](axon-ssm.md) | Mamba-style selective state space model: algorithm, math, and implementation |
 | [SWA + MoE](swa-moe.md) | Sliding window attention and shared-expert mixture-of-experts |
 | [Memory Budget](memory-budget.md) | Memory breakdown, quantization strategy, and thermal management |
+
+---
+
+## See also
+
+- [Papers](../papers/index.md) — Theoretical foundations and mathematical formulations behind each component
+- [Training Guide](../guides/training.md) — Thermal-aware QLoRA fine-tuning workflow
+- [Quantization Guide](../guides/quantization.md) — NF4 quantization details and memory impact
+- [Weight Porting Guide](../guides/porting.md) — How Qwen2.5-3B weights are mapped to Bit-Axon
+- [API Reference — Layers](../api/layers.md) — Python API for all layer implementations

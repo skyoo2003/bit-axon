@@ -100,3 +100,10 @@ The project configuration lives in `pyproject.toml` under `[tool.ruff]`.
 **"Python 3.9 or earlier"**: Bit-Axon needs Python 3.10+. Check your version with `python3 --version` and upgrade if needed.
 
 **"Command not found: bit-axon"**: The pip-installed script might not be on your PATH. Try `python3 -m bit_axon` instead, or make sure your pip bin directory is on PATH.
+
+---
+
+## See also
+
+- [Quickstart](quickstart.md) — Download the model and run your first inference
+- [FAQ](../faq.md) — Troubleshooting MLX installation and other common issues

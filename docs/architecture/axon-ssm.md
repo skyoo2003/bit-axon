@@ -197,4 +197,11 @@ Per SSM layer parameter count (with $D=2560$, $E=7680$, $d_\text{state}=16$):
 
 With 16 SSM-bearing layers (8 pure + 8 with MoE), the SSM accounts for roughly **960M parameters** of the 3.2B total.
 
-[← Back to Architecture](index.md)
+---
+
+## See also
+
+- [← Architecture Overview](index.md)
+- [Axon-SSM Paper](../papers/axon-ssm.md) — Mathematical foundations and selective scan theory
+- [SWA + MoE](swa-moe.md) — Sliding window attention and sparse experts used alongside SSM
+- [API — Layers](../api/layers.md) — `AxonSSM` and `AxonSSMBlock` Python API

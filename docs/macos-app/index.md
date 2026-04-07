@@ -222,3 +222,13 @@ Toggle "Show Metrics" in the sidebar. The toolbar shows:
 4. Click "Start Training."
 
 The app shells out to `bit-axon train` and streams the log. The `bit-axon` CLI must be installed (`pip install bit-axon`) and discoverable in `PATH`.
+
+---
+
+## See also
+
+- [Installation](../getting-started/installation.md) — Python package and MLX setup
+- [Inference Guide](../guides/inference.md) — CLI and Python API for text generation
+- [Training Guide](../guides/training.md) — Fine-tuning with thermal-aware QLoRA
+- [Architecture Overview](../architecture/index.md) — Model design and layer structure
+- [API Reference](../api/index.md) — Python API documentation

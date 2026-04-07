@@ -22,4 +22,4 @@ Download the model, run your first inference from the CLI, try interactive chat 
 
 ## What's next?
 
-After the quickstart, check out the **Guides** section for deeper walkthroughs on training, quantization, inference tuning, and benchmarking. The **Architecture** section explains the sandwich model design, Axon-SSM layers, and memory budget in detail.
+After the quickstart, check out the [**Guides**](../guides/training.md) section for deeper walkthroughs on training, quantization, inference tuning, and benchmarking. The [**Architecture**](../architecture/index.md) section explains the sandwich model design, Axon-SSM layers, and memory budget in detail.

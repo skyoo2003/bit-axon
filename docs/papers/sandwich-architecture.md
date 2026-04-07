@@ -159,3 +159,13 @@ The $d_{\text{source}} = 2048$ dimension enables weight porting from Qwen2.5-3B:
 - Fedus, W., Zoph, B., & Shazeer, N. (2022). *Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity*. JMLR 23.
 - Qwen Team (2024). *Qwen2.5 Technical Report*.
 - Beltagy, I., Peters, M. E., & Cohan, A. (2020). *Longformer: The Long-Document Transformer*. arXiv:2004.05150.
+
+---
+
+## See also
+
+- [Architecture Overview](../architecture/index.md) — Full model configuration, dimension bridge, and design decisions
+- [Axon-SSM](../architecture/axon-ssm.md) — Zone 1 and Zone 3 SSM implementation
+- [SWA + MoE](../architecture/swa-moe.md) — Zone 2 attention and expert implementation
+- [Axon-SSM Paper](axon-ssm.md) — Selective state space model theory
+- [Weight Porting Guide](../guides/porting.md) — How Qwen2.5 weights are mapped to the sandwich architecture

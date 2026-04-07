@@ -20,3 +20,11 @@ These papers focus on the **mathematical foundations** and **algorithmic design*
 - **Mamba**: Gu, A., & Dao, T. (2023). *Mamba: Linear-Time Sequence Modeling with Selective State Spaces*. arXiv:2312.00752.
 - **MLX**: Apple Machine Learning Research. *MLX: An array framework for machine learning on Apple silicon*.
 - **Qwen2.5**: Qwen Team (2024). *Qwen2.5 Technical Report*.
+
+---
+
+## See also
+
+- [Architecture Overview](../architecture/index.md) — Implementation details of each component
+- [Training Guide](../guides/training.md) — Thermal-aware QLoRA training pipeline
+- [Quantization Guide](../guides/quantization.md) — NF4 quantization and merge workflows

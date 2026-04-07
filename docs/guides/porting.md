@@ -302,3 +302,13 @@ The ported model is a starting point, not a finished model. SSM and attention pa
 - Calibrate the attention heads in the SWA layers
 - Differentiate the routed experts so they specialize
 - Align the output head with the truncated vocabulary
+
+---
+
+## See also
+
+- [Architecture Overview](../architecture/index.md) — Dimension bridge, weight tying, and sandwich layout
+- [Sandwich Architecture Paper](../papers/sandwich-architecture.md) — Mathematical formulation of the three-zone design
+- [Training Guide](training.md) — Fine-tune the ported model with QLoRA
+- [Quantization Guide](quantization.md) — Quantize after porting for efficient inference
+- [API — Model](../api/model.md) — `BitAxonModel` Python class documentation

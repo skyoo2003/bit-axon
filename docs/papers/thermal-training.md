@@ -132,3 +132,12 @@ for step in range(num_steps):
 - Apple Developer Documentation. *powermetrics — System Power Metrics*.
 - Apple Machine Learning Research. *MLX: An array framework for machine learning on Apple silicon*.
 - You, Y., et al. (2017). *Large Batch Training of Convolutional Networks*. arXiv:1708.03888. (Related: learning rate scaling under hardware constraints.)
+
+---
+
+## See also
+
+- [Training Guide](../guides/training.md) — Full QLoRA training pipeline with thermal monitoring
+- [Memory Budget](../architecture/memory-budget.md) — Memory constraints during training on 16 GB
+- [Benchmarking Guide](../guides/benchmarking.md) — Temperature monitoring during profiling
+- [Profiling API](../api/profiling.md) — `ThermalMonitor` and `CoolingScheduler` Python API

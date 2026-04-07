@@ -116,3 +116,12 @@ quantizer = TurboQuant(bits=4)
 - Dettmers, T., et al. (2024). *QLoRA: Efficient Finetuning of Quantized LLMs*. NeurIPS 2023. (Related: NF4 quantization.)
 - Kwon, W., et al. (2023). *Efficient Memory Management for Large Language Model Serving with PagedAttention*. SOSP 2023. (Related: KV cache management.)
 - Liu, Z., et al. (2024). *KIVI: A Tuning-Free Asymmetric 2bit Quantization for KV Cache*. arXiv:2402.02750. (Related: KV cache quantization.)
+
+---
+
+## See also
+
+- [Memory Budget](../architecture/memory-budget.md) — Current memory analysis and TurboQuant impact projections
+- [Quantization Guide](../guides/quantization.md) — NF4 weight quantization (implemented)
+- [SWA + MoE](../architecture/swa-moe.md) — Where KV cache is used (layers 9–16 only)
+- [API — Quantization](../api/quantization.md) — Current quantization Python API

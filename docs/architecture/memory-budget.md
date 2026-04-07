@@ -150,4 +150,12 @@ Savings:                       65.5M params = ~131 MB (FP16) / ~36 MB (Q4)
 
 By tying `embed_tokens.weight = lm_head.weight`, the model avoids storing a duplicate copy of the embedding matrix. This is particularly valuable at Q4 where every ~36 MB counts toward the 8 GB ceiling.
 
-[← Back to Architecture](index.md)
+---
+
+## See also
+
+- [← Architecture Overview](index.md)
+- [Quantization Guide](../guides/quantization.md) — NF4 quantization implementation and QLoRA training
+- [Training Guide](../guides/training.md) — QLoRA memory usage during training
+- [TurboQuant Paper](../papers/turboquant.md) — Planned KV cache compression for 64K context
+- [Inference Guide](../guides/inference.md) — KV cache behavior during generation

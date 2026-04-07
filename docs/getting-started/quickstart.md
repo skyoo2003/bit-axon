@@ -78,3 +78,4 @@ Now that you have inference running, check out these guides for deeper work:
 - **[Quantization](../guides/quantization.md)**: Quantize weights and compress the KV cache
 - **[Inference](../guides/inference.md)**: Optimize generation speed and memory usage
 - **[Benchmarking](../guides/benchmarking.md)**: Measure tokens per second and memory footprint
+- **[API Reference](../api/inference.md)**: Python API for `generate()`, `GenerateConfig`, and `load_model()`

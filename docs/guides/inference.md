@@ -336,3 +336,13 @@ The `generate` function handles cache management automatically. You only need to
 
 !!! info
     Because only 8 of 24 layers use KV cache, Bit-Axon's memory footprint during inference stays small. This is a deliberate design choice to keep the model running on 16 GB Apple Silicon devices.
+
+---
+
+## See also
+
+- [Quickstart](../getting-started/quickstart.md) — First-time setup and basic usage
+- [Training Guide](training.md) — Fine-tune the model before running inference
+- [Architecture Overview](../architecture/index.md) — Sandwich structure and KV cache behavior
+- [Benchmarking Guide](benchmarking.md) — Measure tokens/sec and memory usage
+- [API — Inference](../api/inference.md) — `generate()`, `GenerateConfig`, `load_model` Python API

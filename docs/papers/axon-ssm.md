@@ -120,3 +120,12 @@ The layer supports cached inference. The cache tuple `[conv_cache, ssm_state]` c
 - Gu, A., & Dao, T. (2023). *Mamba: Linear-Time Sequence Modeling with Selective State Spaces*. arXiv:2312.00752.
 - Gu, A., Goel, K., & Ré, C. (2022). *Efficiently Modeling Long Sequences with Structured State Spaces*. ICLR 2022.
 - Apple MLX Documentation. *MLX: Compile and Graph Optimization*.
+
+---
+
+## See also
+
+- [Architecture — Axon-SSM](../architecture/axon-ssm.md) — Implementation details, memory properties, and JIT kernels
+- [SWA + MoE](../architecture/swa-moe.md) — Attention and sparse experts paired with SSM in the sandwich design
+- [Sandwich Architecture Paper](sandwich-architecture.md) — How Axon-SSM fits into the three-zone layout
+- [API — Layers](../api/layers.md) — `AxonSSM` Python class documentation

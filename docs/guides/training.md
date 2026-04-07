@@ -649,8 +649,11 @@ The full SFT pipeline executed by `bit-axon train`:
 
 ---
 
-## Related Pages
+## See also
 
-- [CLI Reference](../cli/reference.md) — Full command documentation
-- [Quantization Guide](quantization.md) — NF4 quantization and memory budgets
-- [Architecture](../architecture/index.md) — Model design, sandwich structure, memory layout
+- [CLI Reference](../cli/reference.md) — Full command documentation for `train`, `merge`, `quantize`
+- [Quantization Guide](quantization.md) — NF4 quantization, QLoRA training memory, and merge workflows
+- [Architecture](../architecture/index.md) — Model design, sandwich structure, and memory layout
+- [Thermal Training Paper](../papers/thermal-training.md) — Mathematical foundations of the cooling scheduler
+- [Inference Guide](inference.md) — Run the fine-tuned model with CLI or Python API
+- [API — Training](../api/training.md) — `Trainer`, `TrainingConfig`, `LoRALinear`, `DoRALinear` Python API
