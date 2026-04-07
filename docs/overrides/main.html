@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block extrahead %}
+{% endblock %}
+
+{% block content %}
+{% if page.meta.disclosure %}
+  <div class="admonition disclosure">
+    <p class="admonition-title">{{ page.meta.disclosure }}</p>
+    {{ page.meta.disclosure_text }}
+  </div>
+{% endif %}
+{{ super() }}
+{% endblock %}

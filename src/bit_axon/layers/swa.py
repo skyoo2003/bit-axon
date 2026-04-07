@@ -5,7 +5,26 @@ import mlx.nn as nn
 
 
 class SlidingWindowAttention(nn.Module):
+    """Multi-head attention with a sliding window mask.
+
+    Restricts each token to attend only to tokens within a fixed window size,
+    reducing attention from O(n²) to O(n * window_size).
+
+    Attributes:
+        q_proj: Query projection.
+        k_proj: Key projection.
+        v_proj: Value projection.
+        o_proj: Output projection.
+    """
+
     def __init__(self, hidden_dim: int, num_heads: int, window_size: int):
+        """Initialize sliding window attention.
+
+        Args:
+            hidden_dim: Model hidden dimension.
+            num_heads: Number of attention heads.
+            window_size: Maximum attention distance per side.
+        """
         super().__init__()
         self.num_heads = num_heads
         self.head_dim = hidden_dim // num_heads
@@ -18,6 +37,18 @@ class SlidingWindowAttention(nn.Module):
         self.o_proj = nn.Linear(hidden_dim, hidden_dim, bias=False)
 
     def __call__(self, x, mask=None, cache=None):
+        """Forward pass for sliding window attention.
+
+        Args:
+            x: Input tensor of shape (batch, seq_len, hidden_dim).
+            mask: Optional attention mask to add to scores. If None, a sliding
+                window causal mask is generated automatically.
+            cache: Optional KVCache for autoregressive decoding.
+
+        Returns:
+            Tuple of (output, cache). Output has shape (batch, seq_len, hidden_dim).
+            cache is the updated KVCache or None.
+        """
         B, L, D = x.shape
 
         q = self.q_proj(x)

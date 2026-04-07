@@ -11,11 +11,25 @@ class AxonSSMBlock(nn.Module):
     """Pure SSM block. No MLP — SSM's internal expansion serves the FFN role."""
 
     def __init__(self, config: BitAxonConfig):
+        """Initialize the SSM block.
+
+        Args:
+            config: BitAxonConfig with hidden_dim and rms_norm_eps settings.
+        """
         super().__init__()
         self.input_norm = RMSNorm(config.hidden_dim, config.rms_norm_eps)
         self.ssm = AxonSSM(config)
 
     def __call__(self, x, cache=None):
+        """Forward pass with residual connection.
+
+        Args:
+            x: Input tensor of shape (batch, seq_len, hidden_dim).
+            cache: Optional SSM cache from a previous step.
+
+        Returns:
+            Tuple of (output, cache). Output has shape (batch, seq_len, hidden_dim).
+        """
         residual = x
         x = self.input_norm(x)
         ssm_out, new_cache = self.ssm(x, cache=cache)
@@ -26,6 +40,11 @@ class AxonSWAMoEBlock(nn.Module):
     """SWA + MoE block with sliding window attention and sparse experts."""
 
     def __init__(self, config: BitAxonConfig):
+        """Initialize the SWA + MoE block.
+
+        Args:
+            config: BitAxonConfig with attention and MoE hyperparameters.
+        """
         super().__init__()
         self.input_norm = RMSNorm(config.hidden_dim, config.rms_norm_eps)
         self.attention = SlidingWindowAttention(config.hidden_dim, config.num_heads, config.swa_window_size)
@@ -38,6 +57,15 @@ class AxonSWAMoEBlock(nn.Module):
         )
 
     def __call__(self, x, cache=None):
+        """Forward pass: attention with residual, then MoE with residual.
+
+        Args:
+            x: Input tensor of shape (batch, seq_len, hidden_dim).
+            cache: Optional KVCache for autoregressive decoding.
+
+        Returns:
+            Tuple of (output, cache). Output has shape (batch, seq_len, hidden_dim).
+        """
         residual = x
         x = self.input_norm(x)
         attn_out, new_cache = self.attention(x, cache=cache)
@@ -52,6 +80,11 @@ class AxonSSMMoEBlock(nn.Module):
     """SSM + MoE block with linear recurrence and sparse experts."""
 
     def __init__(self, config: BitAxonConfig):
+        """Initialize the SSM + MoE block.
+
+        Args:
+            config: BitAxonConfig with SSM and MoE hyperparameters.
+        """
         super().__init__()
         self.input_norm = RMSNorm(config.hidden_dim, config.rms_norm_eps)
         self.ssm = AxonSSM(config)
@@ -64,6 +97,15 @@ class AxonSSMMoEBlock(nn.Module):
         )
 
     def __call__(self, x, cache=None):
+        """Forward pass: SSM with residual, then MoE with residual.
+
+        Args:
+            x: Input tensor of shape (batch, seq_len, hidden_dim).
+            cache: Optional SSM cache from a previous step.
+
+        Returns:
+            Tuple of (output, ssm_cache). Output has shape (batch, seq_len, hidden_dim).
+        """
         residual = x
         x = self.input_norm(x)
         ssm_out, ssm_cache = self.ssm(x, cache=cache)

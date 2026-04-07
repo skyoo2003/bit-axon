@@ -5,7 +5,7 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-yaml
-      - id: check-toml
+        files: ^(?!mkdocs\.yml$).*  # mkdocs.yml uses Python tag syntax not supported by check-yaml
       - id: check-merge-conflict
       - id: check-added-large-files
         args: ["--maxkb=500"]

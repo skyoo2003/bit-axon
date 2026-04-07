@@ -4,6 +4,11 @@ import mlx.core as mx
 
 
 class ArraysCache:
+    """Fixed-size cache storing optional mx.array slots.
+
+    Used as a generic container for layer-level intermediate arrays.
+    """
+
     def __init__(self, size: int):
         self.cache: list[mx.array | None] = [None] * size
 
@@ -19,6 +24,12 @@ class ArraysCache:
 
 
 class KVCache:
+    """Key-value cache for autoregressive sliding-window attention.
+
+    Concatenates new K/V tensors along the sequence dimension (axis 2)
+    on each update step.
+    """
+
     def __init__(self):
         self.k: mx.array | None = None
         self.v: mx.array | None = None

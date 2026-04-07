@@ -5,6 +5,26 @@ import mlx.nn as nn
 
 
 class LoRALinear(nn.Module):
+    """Low-Rank Adaptation wrapper around a base Linear layer.
+
+    Adds a trainable low-rank decomposition (lora_a @ lora_b) scaled by
+    ``scale`` and added to the base layer output. Base weights are frozen.
+
+    Args:
+        input_dims: Input dimension of the linear layer.
+        output_dims: Output dimension of the linear layer.
+        r: LoRA rank.
+        dropout: Dropout probability applied before the low-rank path.
+        scale: Scaling factor for the LoRA output.
+        bias: Whether to include a bias term in the base linear layer.
+
+    Attributes:
+        linear: Base frozen linear layer.
+        lora_a: Low-rank matrix A of shape (input_dims, r).
+        lora_b: Low-rank matrix B of shape (r, output_dims), initialized to zeros.
+        scale: Output scaling factor.
+    """
+
     def __init__(self, input_dims, output_dims, r=8, dropout=0.0, scale=20.0, bias=False):
         super().__init__()
         self.linear = nn.Linear(input_dims, output_dims, bias=bias)
@@ -21,6 +41,17 @@ class LoRALinear(nn.Module):
 
     @staticmethod
     def from_base(linear, r=8, dropout=0.0, scale=20.0):
+        """Create a LoRALinear wrapping an existing Linear or QuantizedLinear.
+
+        Args:
+            linear: Base linear layer to wrap. Its weights are preserved.
+            r: LoRA rank.
+            dropout: Dropout probability.
+            scale: Output scaling factor.
+
+        Returns:
+            LoRALinear with the base layer's weights and new LoRA matrices.
+        """
         if isinstance(linear, nn.QuantizedLinear):
             output_dims = linear.weight.shape[0]
             input_dims = linear.weight.shape[1] * 32 // linear.bits
@@ -38,6 +69,17 @@ class LoRALinear(nn.Module):
         return lora
 
     def fuse(self, dequantize=False):
+        """Fuse LoRA weights into the base layer, producing a plain nn.Linear.
+
+        Adds the scaled low-rank delta to the base weight. If the base is
+        QuantizedLinear and dequantize=True, dequantizes before fusing.
+
+        Args:
+            dequantize: If True, dequantize QuantizedLinear weights before fusing.
+
+        Returns:
+            nn.Linear with fused weights.
+        """
         weight = self.linear.weight
         is_quantized = isinstance(self.linear, nn.QuantizedLinear)
         if dequantize and is_quantized:
@@ -95,7 +137,19 @@ def apply_lora_to_model(
 ) -> list[str]:
     """Walk model tree and replace target nn.Linear/nn.QuantizedLinear with LoRA/DoRA wrappers.
 
-    Returns list of wrapped layer paths for verification.
+    Layers matching names in LORA_EXCLUDED_NAMES or paths in LORA_EXCLUDED_PATHS
+    are skipped regardless of target matching.
+
+    Args:
+        model: BitAxonModel to apply adapters to.
+        rank: LoRA rank.
+        dropout: Dropout probability for the adapter.
+        scale: Output scaling factor.
+        targets: Tuple of linear layer name suffixes to wrap.
+        use_dora: If True, use DoRALinear instead of LoRALinear.
+
+    Returns:
+        List of dot-separated paths to wrapped layers.
     """
     from bit_axon.training.dora import DoRALinear
 

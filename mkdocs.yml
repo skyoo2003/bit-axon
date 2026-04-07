@@ -1,0 +1,206 @@
+site_name: Bit-Axon
+site_description: "3.2B hybrid sLLM engine for Apple Silicon — No GPU, No Cloud"
+site_url: https://skyoo2003.github.io/bit-axon/
+repo_url: https://github.com/skyoo2003/bit-axon
+repo_name: skyoo2003/bit-axon
+edit_uri: edit/main/docs/
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: teal
+      toggle:
+        icon: material/brightness-2
+        name: Switch to system preference
+  features:
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.path
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.action.edit
+    - search.highlight
+    - search.suggest
+    - toc.follow
+  custom_dir: docs/overrides
+
+plugins:
+  - search:
+      lang:
+        - en
+        - ko
+  - meta
+  - autorefs
+  - social
+  - glightbox
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: ko
+          name: 한국어
+          build: true
+          site_name: "Bit-Axon"
+          nav_translations:
+            Home: 홈
+            Getting Started: 시작하기
+            Installation: 설치
+            Quickstart: 빠른 시작
+            Architecture: 아키텍처
+            Axon-SSM: Axon-SSM
+            SWA & MoE: SWA 및 MoE
+            Memory Budget: 메모리 예산
+            Papers: 논문
+            Sandwich Architecture: 샌드위치 아키텍처
+            Thermal Training: 열관리 학습
+            TurboQuant: TurboQuant
+            CLI Reference: CLI 레퍼런스
+            API Reference: API 레퍼런스
+            Guides: 가이드
+            Training: 학습
+            Quantization: 양자화
+            Weight Porting: 가중치 변환
+            Inference: 추론
+            Benchmarking: 벤치마킹
+            macOS App: macOS 앱
+            Contributing: 기여하기
+            FAQ: 자주 묻는 질문
+            Changelog: 변경 이력
+        - locale: "null"
+          name: "🌐 Help Translate"
+          build: false
+          fixed_link: https://github.com/skyoo2003/bit-axon/issues
+  - git-revision-date-localized:
+      exclude:
+        - api/*
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            heading_level: 3
+            members_order: source
+            separate_signature: true
+            show_category_heading: true
+            show_symbol_type_heading: true
+            show_if_no_docstring: true
+            show_signature_annotations: true
+            docstring_section_style: table
+            merge_init_into_class: true
+            signature_crossrefs: true
+          inventories:
+            - https://docs.python.org/3/objects.inv
+            - https://numpy.org/doc/stable/objects.inv
+  - minify:
+      minify_html: true
+      minify_js: true
+      minify_css: true
+
+markdown_extensions:
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.arithmatex:
+      generic: true
+  - attr_list
+  - md_in_html
+  - footnotes
+
+extra_css:
+  - stylesheets/extra.css
+extra_javascript:
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/skyoo2003/bit-axon
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/bit-axon/
+    - icon: simple/huggingface
+      link: https://huggingface.co/skyoo2003/bit-axon
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - getting-started/index.md
+      - Installation: getting-started/installation.md
+      - Quickstart: getting-started/quickstart.md
+  - Architecture:
+      - architecture/index.md
+      - Axon-SSM: architecture/axon-ssm.md
+      - SWA & MoE: architecture/swa-moe.md
+      - Memory Budget: architecture/memory-budget.md
+  - Papers:
+      - papers/index.md
+      - Axon-SSM: papers/axon-ssm.md
+      - Sandwich Architecture: papers/sandwich-architecture.md
+      - Thermal Training: papers/thermal-training.md
+      - TurboQuant: papers/turboquant.md
+  - CLI Reference: cli/reference.md
+  - API Reference:
+      - api/index.md
+      - Config: api/config.md
+      - Model: api/model.md
+      - Tokenizer: api/tokenizer.md
+      - Training: api/training.md
+      - Inference: api/inference.md
+      - Layers: api/layers.md
+      - Quantization: api/quantization.md
+      - Profiling: api/profiling.md
+      - Evaluation: api/evaluation.md
+  - Guides:
+      - Training: guides/training.md
+      - Quantization: guides/quantization.md
+      - Weight Porting: guides/porting.md
+      - Inference: guides/inference.md
+      - Benchmarking: guides/benchmarking.md
+  - macOS App: macos-app/index.md
+  - Contributing: contributing.md
+  - FAQ: faq.md
+  - Changelog: changelog.md

@@ -15,7 +15,29 @@ def _compute_dt(dt: mx.array, dt_bias: mx.array, lo: float, hi: float) -> mx.arr
 
 
 class AxonSSM(nn.Module):
+    """Mamba-style state space model layer with causal convolution.
+
+    Implements selective SSM with hardware-aware scan, causal conv1d prefix,
+    and a gating branch (SiLU). The SSM expansion replaces the traditional
+    FFN/MLP role in the block.
+
+    Attributes:
+        in_proj: Projects input to 2x intermediate dim (x and z branches).
+        conv1d: Depthwise causal 1D convolution.
+        x_proj: Projects conv output to B, C, dt parameters.
+        dt_proj: Projects raw dt to per-channel step sizes.
+        out_proj: Projects SSM output back to hidden dim.
+        A_log: Log of the diagonal SSM state matrix (learnable).
+        D: Skip connection parameter per channel.
+    """
+
     def __init__(self, config: BitAxonConfig):
+        """Initialize the AxonSSM layer.
+
+        Args:
+            config: BitAxonConfig with ssm_intermediate_dim, ssm_d_state,
+                ssm_d_conv, and hidden_dim settings.
+        """
         super().__init__()
         D = config.hidden_dim
         E = config.ssm_intermediate_dim
@@ -77,6 +99,16 @@ class AxonSSM(nn.Module):
         return y, h
 
     def __call__(self, x, cache=None):
+        """Run the SSM forward pass.
+
+        Args:
+            x: Input tensor of shape (batch, seq_len, hidden_dim).
+            cache: Optional [conv_cache, ssm_state] from a previous step.
+
+        Returns:
+            Tuple of (output, new_cache). Output has shape (batch, seq_len, hidden_dim).
+            new_cache is [updated_conv_cache, updated_ssm_state] for autoregressive decoding.
+        """
         B_batch, L, D = x.shape
 
         if cache is not None:

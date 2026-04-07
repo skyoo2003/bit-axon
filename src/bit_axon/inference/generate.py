@@ -13,6 +13,17 @@ from bit_axon.inference.sampling import sample_logits
 
 @dataclass
 class GenerateConfig:
+    """Configuration for autoregressive text generation.
+
+    Attributes:
+        max_tokens: Maximum number of tokens to generate.
+        temperature: Sampling temperature. Higher values increase randomness.
+        top_k: Number of top logits to keep during sampling. 0 disables filtering.
+        top_p: Nucleus sampling probability threshold. 1.0 disables filtering.
+        repetition_penalty: Penalty for repeated tokens. 1.0 disables penalty.
+        seed: Optional random seed for reproducible generation.
+    """
+
     max_tokens: int = 512
     temperature: float = 0.6
     top_k: int = 50
@@ -23,6 +34,17 @@ class GenerateConfig:
 
 @dataclass
 class GenerateResult:
+    """Result of text generation.
+
+    Attributes:
+        text: Decoded output text.
+        token_ids: Generated token IDs (excluding prompt).
+        prompt_tokens: Number of tokens in the input prompt.
+        completion_tokens: Number of tokens generated.
+        tokens_per_sec: Generation throughput in tokens per second.
+        time_to_first_token_ms: Time from prefill start to first sampled token, in ms.
+    """
+
     text: str
     token_ids: list[int]
     prompt_tokens: int
@@ -58,6 +80,24 @@ def generate(
     chat: bool = False,
     messages: list[dict[str, str]] | None = None,
 ) -> GenerateResult | Generator[str, None, GenerateResult]:
+    """Run autoregressive text generation.
+
+    Prefills the model with the prompt, then generates tokens one at a time
+    until max_tokens is reached or an EOS token is sampled.
+
+    Args:
+        model: BitAxonModel instance.
+        tokenizer: Tokenizer with encode/decode and apply_chat_template methods.
+        prompt: Input text prompt.
+        config: Generation parameters. Defaults to GenerateConfig().
+        stream: If True, yields partial text strings and returns GenerateResult.
+        chat: If True, applies chat template to prompt.
+        messages: Chat messages for apply_chat_template. Overrides prompt/chat.
+
+    Returns:
+        GenerateResult with generated text and stats, or a generator that
+        yields decoded text strings and returns GenerateResult.
+    """
     cfg = config or GenerateConfig()
 
     token_ids = _encode_prompt(tokenizer, prompt, chat, messages)

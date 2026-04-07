@@ -1,0 +1,47 @@
+name: deploy-docs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - docs/**.md
+      - docs/**.css
+      - docs/**.html
+      - mkdocs.yml
+      - requirements-docs.txt
+      - src/bit_axon/**/*.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -e ".[docs]"
+
+      - name: Build documentation
+        run: mkdocs build
+
+      - name: Deploy to GitHub Pages
+        run: mkdocs gh-deploy --force

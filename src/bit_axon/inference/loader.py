@@ -19,6 +19,21 @@ def load_model(
     bits: int = 4,
     group_size: int = 64,
 ) -> BitAxonModel:
+    """Load a BitAxonModel from disk with optional NF4 quantization.
+
+    Loads weights from safetensors files in weights_path. If no config is
+    provided, attempts to read config.json from the same directory.
+
+    Args:
+        weights_path: Directory containing safetensors weight files.
+        config: Model configuration. Falls back to config.json or defaults.
+        quantize: If True, replace Linear layers with QuantizedLinear.
+        bits: Quantization bit width (default 4 for NF4).
+        group_size: Quantization group size.
+
+    Returns:
+        Loaded BitAxonModel with weights applied.
+    """
     weights_path = Path(weights_path)
 
     if config is None:

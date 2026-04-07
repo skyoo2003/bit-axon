@@ -7,7 +7,27 @@ from bit_axon.utils.cache import KVCache
 
 
 class BitAxonModel(nn.Module):
+    """3.2B hybrid language model with SSM, SWA, and MoE layers.
+
+    24-layer sandwich architecture:
+        - Layers 0-7: Pure SSM (linear recurrence, no KV cache)
+        - Layers 8-15: SWA + MoE (sliding window attention + sparse experts)
+        - Layers 16-23: SSM + MoE (linear recurrence + sparse experts)
+
+    Attributes:
+        config: Model configuration.
+        embed_tokens: Token embedding table.
+        input_proj: Projects from source model dimension to hidden dim.
+        output_proj: Projects from hidden dim back to source model dimension.
+        lm_head: Output projection to vocabulary logits.
+    """
+
     def __init__(self, config: BitAxonConfig):
+        """Initialize the BitAxon model.
+
+        Args:
+            config: BitAxonConfig with architecture hyperparameters.
+        """
         super().__init__()
         self.config = config
         self.embed_tokens = nn.Embedding(config.vocab_size, config.d_source_model)
@@ -30,6 +50,15 @@ class BitAxonModel(nn.Module):
 
     @staticmethod
     def _get_layer_type(layer_idx: int, total_layers: int) -> str:
+        """Determine layer type based on position in the sandwich architecture.
+
+        Args:
+            layer_idx: Zero-based layer index.
+            total_layers: Total number of layers.
+
+        Returns:
+            One of "ssm", "swa_moe", or "ssm_moe".
+        """
         third = total_layers // 3
         if layer_idx < third:
             return "ssm"
@@ -39,6 +68,11 @@ class BitAxonModel(nn.Module):
             return "ssm_moe"
 
     def _create_caches(self) -> list[object]:
+        """Create KV caches for SWA layers; None for SSM layers.
+
+        Returns:
+            List of KVCache objects for swa_moe layers and None for ssm/ssm_moe layers.
+        """
         caches = []
         for i in range(self.config.num_layers):
             if self._get_layer_type(i, self.config.num_layers) == "swa_moe":
@@ -48,6 +82,16 @@ class BitAxonModel(nn.Module):
         return caches
 
     def __call__(self, input_ids: mx.array, cache=None):
+        """Forward pass through all layers.
+
+        Args:
+            input_ids: Token indices of shape (batch, seq_len).
+            cache: Optional list of per-layer caches from a previous call.
+
+        Returns:
+            Tuple of (logits, new_caches). Logits have shape (batch, seq_len, vocab_size).
+            new_caches is a list of updated per-layer caches.
+        """
         x = self.embed_tokens(input_ids)
         x = self.input_proj(x)
 
