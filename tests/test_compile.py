@@ -1,7 +1,7 @@
 import mlx.core as mx
 import mlx.nn as nn
 
-from bit_axon.layers.axon_ssm import _compute_dt, _ssm_fma
+from bit_axon.layers.axon_ssm import _compute_dt, _ssm_fma, segsum
 from bit_axon.layers.moe import swiglu
 from bit_axon.model import BitAxonModel
 
@@ -126,3 +126,27 @@ class TestCompileBitExact:
         # First batch item should have same shape
         assert single_logits.shape[-1] == batch_logits.shape[-1]
         assert mx.all(mx.isfinite(batch_logits)).item()
+
+
+class TestSegsumCompile:
+    def test_segsum_matches_manual(self):
+        x = mx.random.normal((2, 4, 8))
+        result = segsum(x)
+        S = x.shape[-1]
+        expected = mx.zeros((*x.shape, S))
+        for i in range(S):
+            for j in range(i):
+                expected[..., i, j] = x[..., j + 1 : i + 1].sum(axis=-1)
+        assert mx.allclose(result, expected, atol=1e-5)
+
+    def test_segsum_diagonal_zero(self):
+        x = mx.random.normal((3, 6))
+        result = segsum(x)
+        S = x.shape[-1]
+        for i in range(S):
+            assert mx.allclose(result[..., i, i], mx.zeros(result.shape[:-2]), atol=1e-6)
+
+    def test_segsum_shape(self):
+        x = mx.random.normal((2, 3, 10))
+        result = segsum(x)
+        assert result.shape == (2, 3, 10, 10)

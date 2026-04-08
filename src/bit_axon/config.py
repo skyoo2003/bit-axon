@@ -22,6 +22,7 @@ class BitAxonConfig:
     ssm_d_state: int = 16  # state vector dimension
     ssm_d_conv: int = 4  # 1D conv kernel size
     ssm_expand: int = 3  # expansion ratio
+    ssm_scan_step: int = 64  # chunk size for parallel scan
 
     # Sliding Window Attention (Layer 9-16 only)
     swa_window_size: int = 4_096  # sliding window

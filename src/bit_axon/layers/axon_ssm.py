@@ -14,6 +14,20 @@ def _compute_dt(dt: mx.array, dt_bias: mx.array, lo: float, hi: float) -> mx.arr
     return mx.clip(nn.softplus(dt + dt_bias), lo, hi)
 
 
+@mx.compile
+def segsum(x: mx.array) -> mx.array:
+    """Segment sum for parallel scan.
+
+    For input of shape (..., S), returns (..., S, S) where
+    result[..., i, j] = sum(x[..., j+1:i+1]) for i > j, 0 otherwise.
+    """
+    seq_len = x.shape[-1]
+    cs = mx.cumsum(x, axis=-1)
+    diff = cs[..., :, None] - cs[..., None, :]
+    mask = mx.tril(mx.ones((seq_len, seq_len), dtype=diff.dtype), -1)
+    return diff * mask
+
+
 class AxonSSM(nn.Module):
     """Mamba-style state space model layer with causal convolution.
 
@@ -52,6 +66,7 @@ class AxonSSM(nn.Module):
         self.d_conv = d_conv
         self.d_state = d_state
         self.E = E
+        self.step = config.ssm_scan_step
 
         A = mx.repeat(
             mx.arange(1, d_state + 1).astype(mx.float32)[None, :],
@@ -98,6 +113,61 @@ class AxonSSM(nn.Module):
         y = mx.stack(ys, axis=1)
         return y, h
 
+    def _ssm_scan_parallel(self, x, dt, B_in, C_in, ssm_state=None):
+        B_batch, L, E = x.shape
+        d_state = self.d_state
+        A = -mx.exp(self.A_log)
+        step = self.step
+
+        if ssm_state is None:
+            ssm_state = mx.zeros((B_batch, E, d_state))
+
+        dtx = dt * x
+        y_sum = mx.zeros((B_batch, L, E))
+        h_final_parts = []
+
+        for j in range(d_state):
+            A_j = A[:, j]
+            dtA = dt * A_j[None, None, :]
+            h_j = ssm_state[:, :, j]
+            y_chunks = []
+
+            for i in range(0, L, step):
+                S = min(step, L - i)
+                dtA_chunk = dtA[:, i : i + S, :]
+                dtx_chunk = dtx[:, i : i + S, :]
+                B_chunk = B_in[:, i : i + S, j]
+                C_chunk = C_in[:, i : i + S, j]
+
+                dtA_t = dtA_chunk.transpose(0, 2, 1)
+
+                seg = segsum(dtA_t)
+                mask = mx.tril(mx.ones((S, S), dtype=x.dtype))
+                decay = mx.exp(seg) * mask
+
+                dtxB = dtx_chunk * B_chunk[:, :, None]
+                dtxB_t = dtxB.transpose(0, 2, 1)
+
+                h_intra = (decay * dtxB_t[..., None, :]).sum(axis=-1)
+
+                cs = mx.cumsum(dtA_t, axis=-1)
+                carry = mx.exp(cs) * h_j[:, :, None]
+
+                h_full = h_intra + carry
+
+                y_j_chunk = h_full * C_chunk[:, None, :]
+                y_chunks.append(y_j_chunk.transpose(0, 2, 1))
+
+                h_j = h_full[:, :, -1]
+
+            y_j = mx.concatenate(y_chunks, axis=1)
+            y_sum = y_sum + y_j
+            h_final_parts.append(h_j)
+
+        y = y_sum + self.D * x
+        new_ssm_state = mx.stack(h_final_parts, axis=-1)
+        return y, new_ssm_state
+
     def __call__(self, x, cache=None):
         """Run the SSM forward pass.
 
@@ -132,7 +202,10 @@ class AxonSSM(nn.Module):
         dt_raw = self.dt_proj(dt)
         dt = _compute_dt(dt_raw, mx.zeros_like(dt_raw), 1e-4, 100.0)
 
-        y, new_ssm_state = self._ssm_scan(x_conv, dt, B_ssm, C_ssm, ssm_state)
+        if L == 1 and cache is not None:
+            y, new_ssm_state = self._ssm_scan(x_conv, dt, B_ssm, C_ssm, ssm_state)
+        else:
+            y, new_ssm_state = self._ssm_scan_parallel(x_conv, dt, B_ssm, C_ssm, ssm_state)
 
         y = y * nn.silu(z_branch)
         output = self.out_proj(y)
