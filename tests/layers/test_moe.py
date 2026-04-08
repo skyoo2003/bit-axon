@@ -3,6 +3,7 @@ import mlx.core as mx
 from bit_axon.config import BitAxonConfig
 from bit_axon.layers.moe import (
     MLP,
+    QuantizedSwitchLinear,
     SharedExpertMoE,
     SwitchGLU,
     SwitchLinear,
@@ -161,3 +162,48 @@ class TestSharedExpertMoE:
         out = moe(x)
         mx.eval(out)
         assert out.shape == (1, 8, cfg.hidden_dim)
+
+
+class TestQuantizedSwitchLinear:
+    def test_quantized_switch_linear_shape(self):
+        B, L, K, D, H, E = 2, 4, 2, 128, 64, 4
+        layer = SwitchLinear(D, H, E, bias=True)
+        qlayer = QuantizedSwitchLinear.from_switch_linear(layer, group_size=64, bits=4)
+        x = mx.random.normal((B, L, D))
+        indices = mx.random.randint(0, E, shape=(B, L, K))
+        out = qlayer(x, indices)
+        mx.eval(out)
+        assert out.shape == (B, L, K, H)
+
+    def test_quantized_no_bias(self):
+        B, L, K, D, H, E = 1, 4, 2, 128, 64, 4
+        layer = SwitchLinear(D, H, E, bias=False)
+        qlayer = QuantizedSwitchLinear.from_switch_linear(layer, group_size=64, bits=4)
+        assert qlayer.bias is None
+        x = mx.random.normal((B, L, D))
+        indices = mx.random.randint(0, E, shape=(B, L, K))
+        out = qlayer(x, indices)
+        mx.eval(out)
+        assert out.shape == (B, L, K, H)
+
+    def test_quantized_4d_input(self):
+        B, L, K, D, H, E = 1, 4, 2, 128, 64, 4
+        layer = SwitchLinear(D, H, E, bias=False)
+        qlayer = QuantizedSwitchLinear.from_switch_linear(layer, group_size=64, bits=4)
+        x = mx.random.normal((B, L, K, D))
+        indices = mx.random.randint(0, E, shape=(B, L, K))
+        out = qlayer(x, indices)
+        mx.eval(out)
+        assert out.shape == (B, L, K, H)
+
+    def test_quantized_output_close_to_original(self):
+        B, L, K, D, H, E = 1, 4, 2, 128, 64, 4
+        layer = SwitchLinear(D, H, E, bias=False)
+        qlayer = QuantizedSwitchLinear.from_switch_linear(layer, group_size=64, bits=4)
+        x = mx.random.normal((B, L, D))
+        indices = mx.random.randint(0, E, shape=(B, L, K))
+        out_orig = layer(x, indices)
+        out_quant = qlayer(x, indices)
+        mx.eval(out_orig, out_quant)
+        assert out_orig.shape == out_quant.shape
+        assert mx.max(mx.abs(out_orig - out_quant)).item() < 1.0

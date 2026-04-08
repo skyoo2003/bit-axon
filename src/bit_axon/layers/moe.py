@@ -29,8 +29,8 @@ class SwitchLinear(nn.Module):
         """
         super().__init__()
         scale = (1.0 / input_dims) ** 0.5
-        self.weight = mx.random.uniform(low=-scale, high=scale, shape=(num_experts, output_dims, input_dims))
-        self.bias = mx.zeros((num_experts, output_dims)) if bias else None
+        self.weight = mx.random.uniform(low=-scale, high=scale, shape=(num_experts, output_dims, input_dims), dtype=mx.float16)
+        self.bias = mx.zeros((num_experts, output_dims), dtype=mx.float16) if bias else None
 
     def __call__(self, x: mx.array, indices: mx.array, sorted_indices: bool = False) -> mx.array:
         """Route input through expert-specific linear projections.
@@ -52,12 +52,101 @@ class SwitchLinear(nn.Module):
         x_flat = x.reshape(-1, 1, D)
 
         w_t = self.weight.swapaxes(-1, -2)
-        out = mx.gather_mm(x_flat, w_t, rhs_indices=flat_idx, sorted_indices=sorted_indices)
+        out = mx.gather_mm(x_flat, w_t, rhs_indices=flat_idx, sorted_indices=sorted_indices).astype(x.dtype)
         out = out.squeeze(-2)
         out = out.reshape(B, L, K, -1)
         if self.bias is not None:
             out = out + self.bias[indices]
         return out
+
+
+class QuantizedSwitchLinear(nn.Module):
+    """Expert-routed linear layer using quantized NF4 weights with mx.gather_qmm.
+
+    Stores per-expert weight matrices in packed NF4 format and routes each
+    token to its assigned experts via fused quantized gather matrix
+    multiplication.
+
+    Attributes:
+        weight: Packed quantized weights (uint32).
+        scales: Per-group scale factors.
+        biases_quant: Per-group bias values for quantization.
+        bias: Per-expert bias in float16, or None.
+        group_size: Number of elements per quantization group.
+        bits: Quantization bit width.
+    """
+
+    def __init__(
+        self,
+        input_dims: int,
+        output_dims: int,
+        num_experts: int,
+        bias: bool = True,
+        group_size: int = 64,
+        bits: int = 4,
+    ):
+        super().__init__()
+        self.group_size = group_size
+        self.bits = bits
+        self.input_dims = input_dims
+        self.output_dims = output_dims
+        self.num_experts = num_experts
+
+        scale = (1.0 / input_dims) ** 0.5
+        weight = mx.random.uniform(
+            low=-scale,
+            high=scale,
+            shape=(num_experts, output_dims, input_dims),
+            dtype=mx.float16,
+        )
+        self.weight, self.scales, self.biases_quant = mx.quantize(weight, group_size=group_size, bits=bits)
+        self.bias = mx.zeros((num_experts, output_dims), dtype=mx.float16) if bias else None
+        self.freeze()
+
+    def __call__(self, x: mx.array, indices: mx.array, sorted_indices: bool = False) -> mx.array:
+        B, L, K = indices.shape
+        D = x.shape[-1]
+        flat_idx = indices.reshape(-1)
+
+        if x.ndim == 3:
+            x = mx.broadcast_to(mx.expand_dims(x, 2), (B, L, K, D))
+        x_flat = x.reshape(-1, 1, D)
+
+        out = mx.gather_qmm(
+            x_flat,
+            self.weight,
+            self.scales,
+            self.biases_quant,
+            rhs_indices=flat_idx,
+            transpose=True,
+            group_size=self.group_size,
+            bits=self.bits,
+            sorted_indices=sorted_indices,
+        ).astype(x.dtype)
+        out = out.squeeze(-2)
+        out = out.reshape(B, L, K, -1)
+        if self.bias is not None:
+            out = out + self.bias[indices]
+        return out
+
+    @staticmethod
+    def from_switch_linear(
+        switch_linear: SwitchLinear,
+        group_size: int = 64,
+        bits: int = 4,
+    ) -> "QuantizedSwitchLinear":
+        q = QuantizedSwitchLinear.__new__(QuantizedSwitchLinear)
+        nn.Module.__init__(q)
+        q.group_size = group_size
+        q.bits = bits
+        q.input_dims = switch_linear.weight.shape[-1]
+        q.output_dims = switch_linear.weight.shape[-2]
+        q.num_experts = switch_linear.weight.shape[0]
+
+        q.weight, q.scales, q.biases_quant = mx.quantize(switch_linear.weight, group_size=group_size, bits=bits)
+        q.bias = switch_linear.bias
+        q.freeze()
+        return q
 
 
 def _gather_sort(x, indices):
