@@ -142,6 +142,109 @@ class TestSFTDataset:
         assert 0 in loss_mask
 
 
+class TestSFTDatasetOpenHermes:
+    @pytest.fixture
+    def openhermes_data(self):
+        return [
+            {
+                "conversations": [
+                    {"from": "human", "value": "What is 2+2?"},
+                    {"from": "gpt", "value": "4"},
+                ],
+            },
+        ]
+
+    @pytest.fixture
+    def openhermes_data_with_system(self):
+        return [
+            {
+                "system_prompt": "You are a math tutor.",
+                "conversations": [
+                    {"from": "human", "value": "What is 2+2?"},
+                    {"from": "gpt", "value": "4"},
+                ],
+            },
+        ]
+
+    def test_conversations_format(self, test_tokenizer, openhermes_data):
+        ds = SFTDataset(openhermes_data, test_tokenizer)
+        token_ids, loss_mask = ds[0]
+        assert isinstance(token_ids, list)
+        assert isinstance(loss_mask, list)
+        assert len(token_ids) == len(loss_mask)
+
+    def test_conversations_with_system_prompt(self, test_tokenizer, openhermes_data_with_system):
+        ds = SFTDataset(openhermes_data_with_system, test_tokenizer)
+        token_ids, loss_mask = ds[0]
+        assert len(token_ids) == len(loss_mask)
+        decoded = test_tokenizer.decode(token_ids)
+        assert "math tutor" in decoded
+
+    def test_conversations_mask_prompt(self, test_tokenizer, openhermes_data):
+        ds = SFTDataset(openhermes_data, test_tokenizer, mask_prompt=True)
+        token_ids, loss_mask = ds[0]
+        assert loss_mask[0] == 0
+        assert loss_mask[-1] == 1
+
+    def test_conversations_eos_appended(self, test_tokenizer, openhermes_data):
+        ds = SFTDataset(openhermes_data, test_tokenizer)
+        token_ids, _ = ds[0]
+        assert token_ids[-1] == test_tokenizer.eos_token_id
+
+    def test_conversations_multiturn(self, test_tokenizer):
+        data = [
+            {
+                "conversations": [
+                    {"from": "human", "value": "Hi"},
+                    {"from": "gpt", "value": "Hello!"},
+                    {"from": "human", "value": "How are you?"},
+                    {"from": "gpt", "value": "Fine, thanks!"},
+                ],
+            },
+        ]
+        ds = SFTDataset(data, test_tokenizer, mask_prompt=True)
+        token_ids, loss_mask = ds[0]
+        assert len(token_ids) == len(loss_mask)
+        assert 1 in loss_mask
+        assert 0 in loss_mask
+
+    def test_conversations_from_jsonl(self, test_tokenizer, tmp_path):
+        path = tmp_path / "openhermes.jsonl"
+        data = [
+            {
+                "conversations": [
+                    {"from": "human", "value": "Hello"},
+                    {"from": "gpt", "value": "Hi there!"},
+                ],
+            },
+        ]
+        with open(path, "w") as f:
+            for item in data:
+                f.write(json.dumps(item) + "\n")
+        ds = SFTDataset(path, test_tokenizer)
+        assert len(ds) == 1
+
+    def test_neither_key_raises(self, test_tokenizer):
+        data = [{"text": "just some text"}]
+        ds = SFTDataset(data, test_tokenizer)
+        with pytest.raises(KeyError, match=r"messages.*conversations"):
+            ds[0]
+
+    def test_null_system_prompt_ignored(self, test_tokenizer):
+        data = [
+            {
+                "system_prompt": None,
+                "conversations": [
+                    {"from": "human", "value": "Hello"},
+                    {"from": "gpt", "value": "Hi!"},
+                ],
+            },
+        ]
+        ds = SFTDataset(data, test_tokenizer)
+        token_ids, loss_mask = ds[0]
+        assert len(token_ids) == len(loss_mask)
+
+
 class TestAlpacaDataset:
     @pytest.fixture
     def alpaca_data(self):
