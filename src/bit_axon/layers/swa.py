@@ -30,6 +30,7 @@ class SlidingWindowAttention(nn.Module):
         self.head_dim = hidden_dim // num_heads
         self.window_size = window_size
         self.scale = 1.0 / math.sqrt(self.head_dim)
+        self.chunk_size = 512
 
         self.q_proj = nn.Linear(hidden_dim, hidden_dim, bias=False)
         self.k_proj = nn.Linear(hidden_dim, hidden_dim, bias=False)
@@ -59,22 +60,31 @@ class SlidingWindowAttention(nn.Module):
         k = k.reshape(B, L, self.num_heads, self.head_dim).transpose(0, 2, 1, 3)
         v = v.reshape(B, L, self.num_heads, self.head_dim).transpose(0, 2, 1, 3)
 
+        kv_len_before = cache.k.shape[2] if cache is not None and cache.k is not None else 0
         if cache is not None:
             k, v = cache.update_and_fetch(k, v)
 
         kv_len = k.shape[2]
+        q_base_offset = kv_len_before
 
-        scores = (q * self.scale) @ k.transpose(0, 1, 3, 2)
+        out_chunks = []
+        for i in range(0, L, self.chunk_size):
+            j = min(i + self.chunk_size, L)
+            q_chunk = q[:, :, i:j, :]
 
-        if mask is not None:
-            scores = scores + mask
-        else:
-            sw_mask = self._make_sliding_window_mask(L, kv_len)
-            scores = scores + sw_mask
+            scores = (q_chunk * self.scale) @ k.transpose(0, 1, 3, 2)
 
-        attn = mx.softmax(scores, axis=-1)
+            if mask is not None:
+                scores = scores + mask[:, :, i:j, :]
+            else:
+                chunk_mask = self._make_sliding_window_mask(j - i, kv_len, q_offset=q_base_offset + i)
+                scores = scores + chunk_mask
 
-        out = attn @ v
+            attn = mx.softmax(scores, axis=-1)
+            out_chunk = attn @ v
+            out_chunks.append(out_chunk)
+
+        out = mx.concatenate(out_chunks, axis=2)
         out = out.transpose(0, 2, 1, 3).reshape(B, L, D)
 
         out = self.o_proj(out)
@@ -82,11 +92,11 @@ class SlidingWindowAttention(nn.Module):
         new_cache = cache if cache is not None else None
         return out, new_cache
 
-    def _make_sliding_window_mask(self, seq_len: int, kv_len: int):
-        q_pos = mx.arange(seq_len)
+    def _make_sliding_window_mask(self, seq_len: int, kv_len: int, q_offset: int = 0):
+        q_pos = mx.arange(q_offset, q_offset + seq_len)
         k_pos = mx.arange(kv_len)
 
-        causal_offset = kv_len - seq_len
+        causal_offset = kv_len - (q_offset + seq_len)
         causal_mask = k_pos[None, :] <= (q_pos[:, None] + causal_offset)
         window_mask = (q_pos[:, None] + causal_offset) - k_pos[None, :] < self.window_size
 
