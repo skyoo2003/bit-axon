@@ -67,7 +67,7 @@ def run(
 @app.command(name="train")
 def train(
     data: Annotated[str, typer.Argument(help="Path to training JSONL file")],
-    model_weights: Annotated[str, typer.Option("--model-weights", "-w", help="Path to model weights directory")],
+    model_weights: Annotated[str, typer.Option("--model-weights", "-w", help="Model weights directory or HuggingFace repo ID")] = "skyoo2003/bit-axon",
     val_data: Annotated[str | None, typer.Option("--val-data", help="Path to validation JSONL file")] = None,
     tokenizer: Annotated[str, typer.Option("--tokenizer", "-t", help="Tokenizer name or path")] = "Qwen/Qwen2.5-3B",
     config_small: Annotated[bool, typer.Option("--config-small", help="Use small config for testing")] = False,
@@ -79,7 +79,7 @@ def train(
     max_steps: Annotated[int, typer.Option("--max-steps", help="Maximum training steps")] = 10_000,
     batch_size: Annotated[int, typer.Option("--batch-size", help="Batch size")] = 1,
     grad_accum_steps: Annotated[int, typer.Option("--grad-accum-steps", help="Gradient accumulation steps")] = 4,
-    max_seq_len: Annotated[int, typer.Option("--max-seq-len", help="Maximum sequence length")] = 2048,
+    max_seq_len: Annotated[int, typer.Option("--max-seq-len", help="Maximum sequence length")] = 512,
     warmup_steps: Annotated[int, typer.Option("--warmup-steps", help="Warmup steps")] = 100,
     max_grad_norm: Annotated[float, typer.Option("--max-grad-norm", help="Max gradient norm")] = 1.0,
     seed: Annotated[int, typer.Option("--seed", help="Random seed")] = 42,

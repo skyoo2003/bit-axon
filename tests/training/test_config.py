@@ -17,7 +17,7 @@ class TestTrainingConfig:
         assert cfg.quantize_bits == 4
         assert cfg.quantize_group_size == 64
         assert cfg.batch_size == 1
-        assert cfg.max_seq_len == 2048
+        assert cfg.max_seq_len == 512
         assert cfg.save_every == 500
         assert cfg.eval_every == 500
         assert cfg.output_dir == "checkpoints"

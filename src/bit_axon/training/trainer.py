@@ -1,5 +1,7 @@
 """Core training loop components for Bit-Axon."""
 
+import gc
+
 import mlx.core as mx
 import mlx.nn as nn
 from mlx.optimizers import AdamW
@@ -131,8 +133,30 @@ class Trainer:
         self.optimizer = AdamW(learning_rate=lr_schedule, weight_decay=self.config.weight_decay)
 
         # Non-shifting loss function (iterate_batches already shifts)
+        # Manual forward with gradient checkpointing on MoE blocks to reduce
+        # peak memory during forward+backward.
+        from bit_axon.model import BitAxonModel
+
+        _moe_types = frozenset(("swa_moe", "ssm_moe"))
+
         def loss_fn(model, input_ids, labels):
-            logits, _ = model(input_ids)
+            x = model.embed_tokens(input_ids)
+            x = model.input_proj(x)
+            for i in range(model.config.num_layers):
+                layer = getattr(model, f"layer_{i}")
+                layer_type = BitAxonModel._get_layer_type(i, model.config.num_layers)
+                if layer_type in _moe_types:
+
+                    def _ckpd(params, x, _layer=layer):
+                        _layer.update(params)
+                        out, _ = _layer(x)
+                        return out
+
+                    x = mx.checkpoint(_ckpd)(layer.trainable_parameters(), x)
+                else:
+                    x, _ = layer(x)
+            x = model.output_proj(x)
+            logits = model.lm_head(x)
             loss, n_valid = cross_entropy_loss(logits, labels)
             return loss, n_valid
 
@@ -153,6 +177,8 @@ class Trainer:
         from bit_axon.training.collate import iterate_batches
 
         self.setup()
+
+        mx.reset_peak_memory()
 
         batch_iter = iterate_batches(
             self.dataset,
@@ -178,6 +204,7 @@ class Trainer:
             last_loss = float(loss)
 
             grad_accum = accumulate_gradients(grad_accum, grads)
+            del grads
 
             do_update = (self.step_count + 1) % self.config.grad_accum_steps == 0
             if do_update and grad_accum is not None:
@@ -186,9 +213,15 @@ class Trainer:
                 grad_accum = None
 
             mx.eval(self.model.state, self.optimizer.state, loss)
+            del batch
             self.step_count += 1
 
+            if do_update:
+                mx.clear_cache()
+                gc.collect()
+
             if self.step_count % self.config.save_every == 0:
+                mx.reset_peak_memory()
                 save_checkpoint(
                     self.model,
                     self.optimizer,

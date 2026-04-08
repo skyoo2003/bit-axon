@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import gc
+
 from rich.console import Console
 from rich.table import Table
 
@@ -42,7 +44,10 @@ def train_cmd(
 
     from bit_axon.config import BitAxonConfig
     from bit_axon.model import BitAxonModel
-    from bit_axon.quantization.nf4 import replace_linear_with_quantized
+    from bit_axon.quantization.nf4 import (
+        replace_linear_with_quantized,
+        replace_switch_linear_with_quantized,
+    )
     from bit_axon.tokenizer import QwenTokenizerWrapper
     from bit_axon.training.checkpoint import save_adapter_only
     from bit_axon.training.config import TrainingConfig
@@ -89,7 +94,25 @@ def train_cmd(
     console.print(f"Loading model (hidden_dim={config.hidden_dim}, layers={config.num_layers})...")
     model = BitAxonModel(config)
     if not config_small:
-        model.load_weights(model_weights)
+        import mlx.core as mx
+        from mlx.utils import tree_unflatten
+
+        # Resolve HF repo ID to local path if needed
+        weights_path = Path(model_weights)
+        if not weights_path.exists():
+            from huggingface_hub import snapshot_download
+
+            console.print(f"Downloading weights from {model_weights}...")
+            weights_path = Path(snapshot_download(model_weights))
+
+        # Load safetensors weights from directory
+        weights: dict[str, mx.array] = {}
+        for sf_file in sorted(weights_path.glob("*.safetensors")):
+            weights.update(mx.load(str(sf_file)))
+        if weights:
+            model.update(tree_unflatten(list(weights.items())))
+        mx.eval(model.parameters())
+        print_info(f"Loaded weights from {weights_path}")
     else:
         import mlx.core as mx
 
@@ -103,7 +126,23 @@ def train_cmd(
             group_size=training_config.quantize_group_size,
             bits=training_config.quantize_bits,
         )
+        # Also quantize SwitchLinear (MoE expert) weights to NF4
+        replace_switch_linear_with_quantized(
+            model,
+            group_size=training_config.quantize_group_size,
+            bits=training_config.quantize_bits,
+        )
+    mx.eval(model.parameters())
+    mx.clear_cache()
+    gc.collect()
     print_success("Quantization complete")
+
+    # 4.5. Cast embedding to float16 to save ~125 MB
+    import mlx.core as mx
+
+    model.embed_tokens.weight = model.embed_tokens.weight.astype(mx.float16)
+    mx.eval(model.parameters())
+    print_info("Embedding cast to float16")
 
     # 5. Freeze all, apply LoRA/DoRA
     adapter_type = "DoRA" if training_config.use_dora else "LoRA"
@@ -116,7 +155,15 @@ def train_cmd(
             targets=training_config.lora_targets,
             use_dora=training_config.use_dora,
         )
+    mx.eval(model.parameters())
+    mx.clear_cache()
+    gc.collect()
     print_success(f"Wrapped {len(wrapped)} layers with {adapter_type} adapters")
+
+    # Freeze everything, then unfreeze only adapter params so nn.value_and_grad
+    # doesn't retain activations for the entire 4B+ param model during backprop.
+    model.freeze()
+    model.apply_to_modules(lambda k, m: m.unfreeze(keys=["lora_a", "lora_b", "m"]) if type(m).__name__ in ("DoRALinear", "LoRALinear") else None)
 
     # 6. Load datasets
     console.print(f"Loading tokenizer: {tokenizer}")

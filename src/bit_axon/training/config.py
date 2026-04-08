@@ -47,7 +47,7 @@ class TrainingConfig:
 
     # Data
     batch_size: int = 1
-    max_seq_len: int = 2048
+    max_seq_len: int = 512
 
     # Checkpointing
     save_every: int = 500
