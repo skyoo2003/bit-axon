@@ -109,6 +109,38 @@ class TestQLoRASupport:
         assert dora.lora_a.shape == (64, 4)
         assert dora.lora_b.shape == (4, 32)
 
+    def test_dora_quantized_forward_shape(self):
+        """DoRA on QuantizedLinear should produce correct output shape."""
+        linear = nn.Linear(64, 32)
+        qlinear = nn.QuantizedLinear.from_linear(linear, bits=4, group_size=64)
+        dora = DoRALinear.from_base(qlinear, r=4, dropout=0.0)
+        x = mx.random.normal(shape=(2, 8, 64))
+        out = dora(x)
+        assert out.shape == (2, 8, 32)
+
+    def test_dora_quantized_matches_base(self):
+        """DoRA with zero-init B on QuantizedLinear should match base output."""
+        linear = nn.Linear(64, 32)
+        qlinear = nn.QuantizedLinear.from_linear(linear, bits=4, group_size=64)
+        x = mx.random.normal(shape=(1, 4, 64))
+        base_out = qlinear(x)
+        dora = DoRALinear.from_base(qlinear, r=4, dropout=0.0)
+        dora_out = dora(x)
+        diff = mx.abs(dora_out - base_out).max()
+        assert float(diff) < 1e-3
+
+    def test_dora_quantized_fuse(self):
+        """DoRA fuse on QuantizedLinear should produce matching output."""
+        linear = nn.Linear(64, 32)
+        qlinear = nn.QuantizedLinear.from_linear(linear, bits=4, group_size=64)
+        dora = DoRALinear.from_base(qlinear, r=4, scale=5.0, dropout=0.0)
+        x = mx.random.normal(shape=(2, 8, 64))
+        dora_out = dora(x)
+        fused = dora.fuse()
+        fused_out = fused(x)
+        diff = mx.abs(dora_out - fused_out).max()
+        assert float(diff) < 1e-3
+
     def test_lora_quantized_forward_shape(self):
         """LoRA on QuantizedLinear should produce correct output shape."""
         linear = nn.Linear(64, 32)
