@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import gc
+
 import mlx.core as mx
 import mlx.nn as nn
 from mlx.optimizers import AdamW
@@ -86,6 +88,8 @@ class ORPOTrainer:
 
         self.setup()
 
+        mx.reset_peak_memory()
+
         batch_iter = iterate_orpo_batches(
             self.dataset,
             batch_size=self.config.batch_size,
@@ -112,6 +116,7 @@ class ORPOTrainer:
             last_metrics = {k: float(v) for k, v in metrics.items()}
 
             grad_accum = accumulate_gradients(grad_accum, grads)
+            del grads
 
             do_update = (self.step_count + 1) % self.config.grad_accum_steps == 0
             if do_update and grad_accum is not None:
@@ -120,9 +125,15 @@ class ORPOTrainer:
                 grad_accum = None
 
             mx.eval(self.model.state, self.optimizer.state, loss)
+            del batch
             self.step_count += 1
 
+            if do_update:
+                mx.clear_cache()
+                gc.collect()
+
             if self.step_count % self.config.save_every == 0:
+                mx.reset_peak_memory()
                 save_checkpoint(
                     self.model,
                     self.optimizer,

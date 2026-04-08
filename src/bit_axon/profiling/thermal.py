@@ -34,27 +34,43 @@ class ThermalMonitor:
         self._stop_event = Event()
         self._lock = Lock()
         self._current_temp: float | None = None
+        self._sudo_checked: bool = False
+        self._sudo_available: bool = False
         self._read_fn = read_fn or self.get_soc_temperature
 
     def get_soc_temperature(self) -> float | None:
         """Get current SoC die temperature in Celsius.
 
-        Uses `sudo powermetrics --samplers smc -i 1 -n 1` on macOS.
+        Uses `sudo -n powermetrics --samplers smc -i 1 -n 1` on macOS.
+        The ``-n`` flag prevents sudo from prompting for a password, so
+        the call fails silently when elevated privileges are unavailable.
         Falls back to None if not available (no sudo, not macOS, etc.).
         """
+        if self._sudo_checked and not self._sudo_available:
+            return None
+
         try:
             result = subprocess.run(
-                ["sudo", "powermetrics", "--samplers", "smc", "-i", "1", "-n", "1"],
+                ["sudo", "-n", "powermetrics", "--samplers", "smc", "-i", "1", "-n", "1"],
                 capture_output=True,
                 text=True,
                 timeout=5,
+                stdin=subprocess.DEVNULL,
             )
+            if result.returncode != 0:
+                self._sudo_checked = True
+                self._sudo_available = False
+                return None
+            self._sudo_checked = True
+            self._sudo_available = True
             output = result.stdout + result.stderr
             match = re.search(r"[Dd]ie [Tt]emperature:\s*([\d.]+)\s*C", output)
             if match:
                 return float(match.group(1))
             return None
         except (subprocess.SubprocessError, FileNotFoundError, OSError):
+            self._sudo_checked = True
+            self._sudo_available = False
             return None
 
     def start(self) -> None:

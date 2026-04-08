@@ -114,13 +114,15 @@ def compute_orpo_loss(
     """
     # Forward passes
     logits_chosen = model(chosen_ids)
-    logits_rejected = model(rejected_ids)
 
     # SFT / NLL component on chosen sequences
     nll_loss, _ = cross_entropy_loss(logits_chosen, chosen_labels)
 
     # Averaged log-probabilities for preference comparison
     chosen_logps = get_logps(logits_chosen, chosen_labels)
+    del logits_chosen
+
+    logits_rejected = model(rejected_ids)
     rejected_logps = get_logps(logits_rejected, rejected_labels)
 
     # ORPO odds-ratio penalty

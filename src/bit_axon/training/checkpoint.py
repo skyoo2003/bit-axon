@@ -39,7 +39,7 @@ def save_checkpoint(
     ckpt_dir = output_dir / f"step_{step:08d}"
     ckpt_dir.mkdir(parents=True, exist_ok=True)
 
-    adapter_weights = dict(tree_flatten(model.parameters()))
+    adapter_weights = dict(tree_flatten(get_trainable_params(model)))
     mx.save_safetensors(str(ckpt_dir / "adapters.safetensors"), adapter_weights)
 
     flat_opt_state = dict(tree_flatten(optimizer.state))
