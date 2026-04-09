@@ -53,7 +53,7 @@ class GenerateResult:
     time_to_first_token_ms: float | None = None
 
 
-def _encode_prompt(tokenizer, prompt, chat, messages):
+def _encode_prompt(tokenizer, prompt: str, chat: bool, messages: list[dict[str, str]] | None) -> list[int]:
     if messages is not None:
         return tokenizer.apply_chat_template(messages, add_generation_prompt=True)
     if chat:
@@ -61,7 +61,7 @@ def _encode_prompt(tokenizer, prompt, chat, messages):
     return tokenizer.encode(prompt)
 
 
-def _prefill(model, token_ids):
+def _prefill(model, token_ids: list[int]) -> tuple[mx.array, list, float, float]:
     input_ids = mx.array([token_ids], dtype=mx.uint32)
     mx.synchronize()
     t_start = time.perf_counter()
@@ -110,10 +110,7 @@ def generate(
     return _generate_sync(model, tokenizer, logits, caches, cfg, prompt_tokens, t_start, ttft_ms)
 
 
-def _generate_sync(model, tokenizer, logits, caches, cfg, prompt_tokens, t_start, ttft_ms):
-    generated_ids: list[int] = []
-    eos_id = tokenizer.eos_token_id
-
+def _generate_tokens(model, logits, caches, cfg, eos_id) -> Generator[int, None, None]:
     for _ in range(cfg.max_tokens):
         next_logits = logits[:, -1, :]
         next_token = sample_logits(
@@ -127,9 +124,18 @@ def _generate_sync(model, tokenizer, logits, caches, cfg, prompt_tokens, t_start
         if tok_id == eos_id:
             break
 
-        generated_ids.append(tok_id)
+        yield tok_id
+
         next_input = mx.array([[tok_id]], dtype=mx.uint32)
         logits, caches = model(next_input, cache=caches)
+
+
+def _generate_sync(model, tokenizer, logits, caches, cfg, prompt_tokens, t_start, ttft_ms) -> GenerateResult:
+    eos_id = tokenizer.eos_token_id
+    generated_ids: list[int] = []
+
+    for tok_id in _generate_tokens(model, logits, caches, cfg, eos_id):
+        generated_ids.append(tok_id)
 
     mx.synchronize()
     elapsed = time.perf_counter() - t_start
@@ -145,28 +151,13 @@ def _generate_sync(model, tokenizer, logits, caches, cfg, prompt_tokens, t_start
     )
 
 
-def _generate_stream(model, tokenizer, logits, caches, cfg, prompt_tokens, t_start, ttft_ms):
-    generated_ids: list[int] = []
+def _generate_stream(model, tokenizer, logits, caches, cfg, prompt_tokens, t_start, ttft_ms) -> Generator[str, None, GenerateResult]:
     eos_id = tokenizer.eos_token_id
+    generated_ids: list[int] = []
 
-    for _ in range(cfg.max_tokens):
-        next_logits = logits[:, -1, :]
-        next_token = sample_logits(
-            next_logits,
-            temperature=cfg.temperature,
-            top_k=cfg.top_k,
-            top_p=cfg.top_p,
-        )
-        tok_id = int(next_token.item())
-
-        if tok_id == eos_id:
-            break
-
+    for tok_id in _generate_tokens(model, logits, caches, cfg, eos_id):
         generated_ids.append(tok_id)
-        yield tokenizer.decode(generated_ids, skip_special_tokens=True)
-
-        next_input = mx.array([[tok_id]], dtype=mx.uint32)
-        logits, caches = model(next_input, cache=caches)
+        yield tokenizer.decode([tok_id], skip_special_tokens=True)
 
     mx.synchronize()
     elapsed = time.perf_counter() - t_start
