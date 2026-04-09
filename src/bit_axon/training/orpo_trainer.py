@@ -27,6 +27,7 @@ class ORPOTrainer:
         dataset,
         val_dataset=None,
         cooling_scheduler=None,
+        on_step=None,
     ):
         from bit_axon.training.config import TrainingConfig
 
@@ -35,6 +36,7 @@ class ORPOTrainer:
         self.dataset = dataset
         self.val_dataset = val_dataset
         self.cooling = cooling_scheduler
+        self.on_step = on_step
         self.optimizer = None
         self.step_count = 0
         self._loss_and_grad = None
@@ -128,6 +130,9 @@ class ORPOTrainer:
             del batch
             self.step_count += 1
 
+            if self.on_step is not None:
+                self.on_step(self.step_count, {"loss": last_loss, "grad_norm": float(last_grad_norm), **last_metrics})
+
             if do_update:
                 mx.clear_cache()
                 gc.collect()
@@ -198,7 +203,7 @@ class ORPOTrainer:
             mx.eval(loss)
             total_loss += float(loss)
             total_reward_margin += float(metrics["reward_margin"])
-            if num_batches >= 9:
+            if num_batches >= self.config.eval_batches - 1:
                 break
 
         n = num_batches + 1

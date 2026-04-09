@@ -1,6 +1,9 @@
 """Core training loop components for Bit-Axon."""
 
+from __future__ import annotations
+
 import gc
+from collections.abc import Callable
 
 import mlx.core as mx
 import mlx.nn as nn
@@ -11,7 +14,7 @@ from mlx.utils import tree_flatten, tree_map
 from bit_axon.training.loss import cross_entropy_loss
 
 
-def make_loss_fn(model: nn.Module):
+def make_loss_fn(model: nn.Module) -> Callable:
     """Create a loss function for the given model.
 
     Args:
@@ -31,7 +34,7 @@ def make_loss_fn(model: nn.Module):
     return loss_fn
 
 
-def create_loss_and_grad(model: nn.Module):
+def create_loss_and_grad(model: nn.Module) -> Callable:
     """Create a loss-and-gradient function using nn.value_and_grad.
 
     Args:
@@ -106,6 +109,7 @@ class Trainer:
         dataset,
         val_dataset=None,
         cooling_scheduler=None,
+        on_step=None,
     ):
         from bit_axon.training.config import TrainingConfig
 
@@ -114,6 +118,7 @@ class Trainer:
         self.dataset = dataset
         self.val_dataset = val_dataset
         self.cooling = cooling_scheduler
+        self.on_step = on_step
         self.optimizer = None
         self.step_count = 0
         self._loss_and_grad = None
@@ -216,6 +221,9 @@ class Trainer:
             del batch
             self.step_count += 1
 
+            if self.on_step is not None:
+                self.on_step(self.step_count, {"loss": last_loss, "grad_norm": float(last_grad_norm)})
+
             if do_update:
                 mx.clear_cache()
                 gc.collect()
@@ -263,7 +271,7 @@ class Trainer:
             mx.eval(loss, n_valid)
             total_loss += float(loss) * float(n_valid)
             total_tokens += float(n_valid)
-            if num_batches >= 9:
+            if num_batches >= self.config.eval_batches - 1:
                 break
 
         avg_loss = total_loss / max(total_tokens, 1)

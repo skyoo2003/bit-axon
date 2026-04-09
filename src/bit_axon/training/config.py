@@ -1,5 +1,7 @@
 """Bit-Axon SFT training configuration."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 
@@ -52,6 +54,7 @@ class TrainingConfig:
     # Checkpointing
     save_every: int = 500
     eval_every: int = 500
+    eval_batches: int = 10
     output_dir: str = "checkpoints"
 
     # Thermal thresholds (°C)
