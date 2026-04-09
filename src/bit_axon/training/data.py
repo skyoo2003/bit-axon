@@ -46,7 +46,42 @@ def _read_jsonl_line(path: str | Path, offset: int) -> dict[str, object]:
         return json.loads(f.readline())
 
 
-class SFTDataset:
+class _BaseJSONLDataset:
+    def __init__(
+        self,
+        data: list[dict] | str | Path,
+        tokenizer: QwenTokenizerWrapper,
+        max_seq_len: int = 2048,
+    ) -> None:
+        self._tokenizer = tokenizer
+        self._max_seq_len = max_seq_len
+        if isinstance(data, (str, Path)):
+            self._file_path = str(Path(data).resolve())
+            self._offsets = _build_line_offsets(self._file_path)
+            self._data: list[dict[str, object]] | None = None
+        else:
+            self._file_path = None
+            self._offsets: list[int] | None = None
+            self._data = data
+
+    def __len__(self) -> int:
+        if self._offsets is not None:
+            return len(self._offsets)
+        if self._data is None:
+            raise RuntimeError("No in-memory data available")
+        return len(self._data)
+
+    def _get_raw(self, idx: int) -> dict[str, object]:
+        if self._file_path is not None:
+            if self._offsets is None:
+                raise RuntimeError("No in-memory data available")
+            return _read_jsonl_line(self._file_path, self._offsets[idx])
+        if self._data is None:
+            raise RuntimeError("No in-memory data available")
+        return self._data[idx]
+
+
+class SFTDataset(_BaseJSONLDataset):
     """Dataset for supervised fine-tuning with chat/messages format.
 
     Expected JSONL formats:
@@ -76,30 +111,8 @@ class SFTDataset:
         max_seq_len: int = 2048,
         mask_prompt: bool = True,
     ) -> None:
-        self._tokenizer = tokenizer
-        self._max_seq_len = max_seq_len
+        super().__init__(data, tokenizer, max_seq_len)
         self._mask_prompt = mask_prompt
-        if isinstance(data, (str, Path)):
-            self._file_path = str(Path(data).resolve())
-            self._offsets = _build_line_offsets(self._file_path)
-            self._data: list[dict[str, object]] | None = None
-        else:
-            self._file_path = None
-            self._offsets: list[int] | None = None
-            self._data = data
-
-    def __len__(self) -> int:
-        if self._offsets is not None:
-            return len(self._offsets)
-        assert self._data is not None
-        return len(self._data)
-
-    def _get_raw(self, idx: int) -> dict[str, object]:
-        if self._file_path is not None:
-            assert self._offsets is not None
-            return _read_jsonl_line(self._file_path, self._offsets[idx])
-        assert self._data is not None
-        return self._data[idx]
 
     def _get_messages(self, raw: dict[str, object]) -> list[dict[str, str]]:
         if "messages" in raw:
@@ -144,8 +157,9 @@ class SFTDataset:
 
         mask = [0] * len(token_ids)
         accumulated: list[dict[str, str]] = []
+        prev_len = 0
+
         for msg in messages:
-            prev_len = len(self._tokenizer.apply_chat_template(accumulated)) if accumulated else 0
             accumulated.append(msg)
             cur_len = len(self._tokenizer.apply_chat_template(accumulated))
 
@@ -154,10 +168,12 @@ class SFTDataset:
                 for j in range(prev_len, end):
                     mask[j] = 1
 
-        # Extend last assistant range to include appended EOS token
+            prev_len = cur_len
+
+        # Extend last assistant range to include appended EOS token.
+        # prev_len now equals len(apply_chat_template(messages)).
         if messages and messages[-1]["role"] == "assistant":
-            last_assistant_end = len(self._tokenizer.apply_chat_template(messages))
-            for j in range(last_assistant_end, len(token_ids)):
+            for j in range(prev_len, len(token_ids)):
                 mask[j] = 1
 
         return mask
@@ -199,7 +215,7 @@ class AlpacaDataset(SFTDataset):
         ]
 
 
-class ORPODataset:
+class ORPODataset(_BaseJSONLDataset):
     """Dataset for ORPO (Odds Ratio Preference Optimization).
 
     Expected JSONL format:
@@ -210,36 +226,6 @@ class ORPODataset:
 
     Yields (chosen_ids, chosen_mask, rejected_ids, rejected_mask) per example.
     """
-
-    def __init__(
-        self,
-        data: list[dict[str, object]] | str | Path,
-        tokenizer: QwenTokenizerWrapper,
-        max_seq_len: int = 2048,
-    ) -> None:
-        self._tokenizer = tokenizer
-        self._max_seq_len = max_seq_len
-        if isinstance(data, (str, Path)):
-            self._file_path = str(Path(data).resolve())
-            self._offsets = _build_line_offsets(self._file_path)
-            self._data: list[dict[str, object]] | None = None
-        else:
-            self._file_path = None
-            self._offsets: list[int] | None = None
-            self._data = data
-
-    def __len__(self) -> int:
-        if self._offsets is not None:
-            return len(self._offsets)
-        assert self._data is not None
-        return len(self._data)
-
-    def _get_raw(self, idx: int) -> dict[str, object]:
-        if self._file_path is not None:
-            assert self._offsets is not None
-            return _read_jsonl_line(self._file_path, self._offsets[idx])
-        assert self._data is not None
-        return self._data[idx]
 
     def __getitem__(self, idx: int) -> tuple[list[int], list[int], list[int], list[int]]:
         raw = self._get_raw(idx)
@@ -307,7 +293,8 @@ class CacheDataset:
         if self._cache[idx] is None:
             self._cache[idx] = self._dataset[idx]
         result = self._cache[idx]
-        assert result is not None
+        if result is None:
+            raise RuntimeError("Failed to load dataset example")
         return result
 
     def itemlen(self, idx: int) -> int:
