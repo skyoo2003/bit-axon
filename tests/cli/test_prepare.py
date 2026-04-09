@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 from typer.testing import CliRunner
 
 from bit_axon.cli.main import app
+from tests.cli import strip_ansi
 
 runner = CliRunner()
 
@@ -30,7 +31,7 @@ class TestCLIPrepare:
     def test_help(self):
         result = runner.invoke(app, ["prepare", "--help"])
         assert result.exit_code == 0
-        assert "HuggingFace" in result.output
+        assert "HuggingFace" in strip_ansi(result.output)
 
     def test_prepare_alpaca_format(self, tmp_path):
         fake_ds = _make_fake_dataset(FAKE_ROWS)
@@ -68,7 +69,7 @@ class TestCLIPrepare:
         with patch("datasets.load_dataset", return_value=fake_ds), patch("bit_axon.cli.prepare.Path.mkdir"):
             result = runner.invoke(app, ["prepare", "org/repo"])
         assert result.exit_code == 0
-        assert "org_repo_train.jsonl" in result.output
+        assert "org_repo_train.jsonl" in strip_ansi(result.output)
 
     def test_prepare_invalid_format(self):
         result = runner.invoke(app, ["prepare", "some/repo", "--format", "invalid"])

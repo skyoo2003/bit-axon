@@ -1,6 +1,7 @@
 from typer.testing import CliRunner
 
 from bit_axon.cli.main import app
+from tests.cli import strip_ansi
 
 runner = CliRunner()
 
@@ -9,7 +10,7 @@ class TestCLITrain:
     def test_train_help(self):
         result = runner.invoke(app, ["train", "--help"])
         assert result.exit_code == 0
-        assert "data" in result.output.lower()
+        assert "data" in strip_ansi(result.output).lower()
 
     def test_train_requires_data(self):
         result = runner.invoke(app, ["train"])
@@ -24,4 +25,4 @@ class TestCLITrain:
             app,
             ["train", "data.json", "--model-weights", "/tmp/nonexistent", "--config-small", "--max-steps", "1"],
         )
-        assert result.exit_code != 0 or "error" in result.output.lower() or result.exit_code == 0
+        assert result.exit_code != 0 or "error" in strip_ansi(result.output).lower() or result.exit_code == 0
