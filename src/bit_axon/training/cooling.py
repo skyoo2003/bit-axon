@@ -1,5 +1,7 @@
 """Thermal-aware cooling scheduler for training on fanless MacBooks."""
 
+from __future__ import annotations
+
 import time
 from dataclasses import dataclass
 

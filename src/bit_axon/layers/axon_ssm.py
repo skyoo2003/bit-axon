@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import mlx.core as mx
 import mlx.nn as nn
 
@@ -76,7 +78,7 @@ class AxonSSM(nn.Module):
         self.A_log = mx.log(A)
         self.D = mx.ones((E,))
 
-    def _causal_conv1d(self, x, conv_cache=None):
+    def _causal_conv1d(self, x: mx.array, conv_cache: mx.array | None = None) -> tuple[mx.array, mx.array]:
         K = self.d_conv
         if conv_cache is not None:
             x = mx.concatenate([conv_cache, x], axis=1)
@@ -87,7 +89,7 @@ class AxonSSM(nn.Module):
         x = self.conv1d(x)
         return x, new_conv_cache
 
-    def _ssm_scan(self, x, dt, B_in, C_in, ssm_state=None):
+    def _ssm_scan(self, x: mx.array, dt: mx.array, B_in: mx.array, C_in: mx.array, ssm_state: mx.array | None = None) -> tuple[mx.array, mx.array]:
         B_batch, L, E = x.shape
         d_state = self.d_state
         A = -mx.exp(self.A_log)
@@ -113,7 +115,7 @@ class AxonSSM(nn.Module):
         y = mx.stack(ys, axis=1)
         return y, h
 
-    def _ssm_scan_parallel(self, x, dt, B_in, C_in, ssm_state=None):
+    def _ssm_scan_parallel(self, x: mx.array, dt: mx.array, B_in: mx.array, C_in: mx.array, ssm_state: mx.array | None = None) -> tuple[mx.array, mx.array]:
         B_batch, L, E = x.shape
         d_state = self.d_state
         A = -mx.exp(self.A_log)
@@ -168,7 +170,7 @@ class AxonSSM(nn.Module):
         new_ssm_state = mx.stack(h_final_parts, axis=-1)
         return y, new_ssm_state
 
-    def __call__(self, x, cache=None):
+    def __call__(self, x: mx.array, cache: list | None = None) -> tuple[mx.array, list]:
         """Run the SSM forward pass.
 
         Args:

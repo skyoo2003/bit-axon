@@ -1,5 +1,7 @@
 """Bit-Axon 3B model configuration."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 
 

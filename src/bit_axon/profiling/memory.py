@@ -1,5 +1,7 @@
 """Memory profiling utilities for MLX models."""
 
+from __future__ import annotations
+
 import mlx.core as mx
 from mlx.utils import tree_flatten
 

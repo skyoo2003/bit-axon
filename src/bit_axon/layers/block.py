@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import mlx.core as mx
 import mlx.nn as nn
 
 from bit_axon.config import BitAxonConfig
@@ -20,7 +23,7 @@ class AxonSSMBlock(nn.Module):
         self.input_norm = RMSNorm(config.hidden_dim, config.rms_norm_eps)
         self.ssm = AxonSSM(config)
 
-    def __call__(self, x, cache=None):
+    def __call__(self, x: mx.array, cache: list | None = None) -> tuple[mx.array, list | None]:
         """Forward pass with residual connection.
 
         Args:
@@ -56,7 +59,7 @@ class AxonSWAMoEBlock(nn.Module):
             config.moe_top_k,
         )
 
-    def __call__(self, x, cache=None):
+    def __call__(self, x: mx.array, cache: list | None = None) -> tuple[mx.array, list | None]:
         """Forward pass: attention with residual, then MoE with residual.
 
         Args:
@@ -96,7 +99,7 @@ class AxonSSMMoEBlock(nn.Module):
             config.moe_top_k,
         )
 
-    def __call__(self, x, cache=None):
+    def __call__(self, x: mx.array, cache: list | None = None) -> tuple[mx.array, list | None]:
         """Forward pass: SSM with residual, then MoE with residual.
 
         Args:

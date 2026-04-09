@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 
 import mlx.core as mx
@@ -37,7 +39,7 @@ class SlidingWindowAttention(nn.Module):
         self.v_proj = nn.Linear(hidden_dim, hidden_dim, bias=False)
         self.o_proj = nn.Linear(hidden_dim, hidden_dim, bias=False)
 
-    def __call__(self, x, mask=None, cache=None):
+    def __call__(self, x: mx.array, mask: mx.array | None = None, cache=None) -> tuple[mx.array, object | None]:
         """Forward pass for sliding window attention.
 
         Args:

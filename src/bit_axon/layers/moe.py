@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import mlx.core as mx
 import mlx.nn as nn
 
@@ -134,7 +136,7 @@ class QuantizedSwitchLinear(nn.Module):
         switch_linear: SwitchLinear,
         group_size: int = 64,
         bits: int = 4,
-    ) -> "QuantizedSwitchLinear":
+    ) -> QuantizedSwitchLinear:
         q = QuantizedSwitchLinear.__new__(QuantizedSwitchLinear)
         nn.Module.__init__(q)
         q.group_size = group_size
@@ -149,14 +151,14 @@ class QuantizedSwitchLinear(nn.Module):
         return q
 
 
-def _gather_sort(x, indices):
+def _gather_sort(x: mx.array, indices: mx.array) -> tuple[mx.array, mx.array, mx.array]:
     indices = indices.flatten()
     order = mx.argsort(indices)
     inv_order = mx.argsort(order)
     return x.reshape(-1, x.shape[-1])[order], indices[order], inv_order
 
 
-def _scatter_unsort(x, inv_order, shape=None):
+def _scatter_unsort(x: mx.array, inv_order: mx.array, shape: tuple[int, ...] | None = None) -> mx.array:
     x = x[inv_order]
     if shape is not None:
         x = mx.unflatten(x, 0, shape)

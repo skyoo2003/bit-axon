@@ -1,5 +1,7 @@
 """Speed profiling utilities for MLX model inference."""
 
+from __future__ import annotations
+
 import statistics
 import time
 

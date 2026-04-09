@@ -1,5 +1,7 @@
 """Comprehensive benchmark suite for Bit-Axon model."""
 
+from __future__ import annotations
+
 import time
 
 import mlx.core as mx
