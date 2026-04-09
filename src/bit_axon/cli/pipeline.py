@@ -88,20 +88,32 @@ def pipeline_cmd(
     max_seq_len: int,
     lora_rank: int,
     batch_size: int,
+    sft_data: str | None = None,
+    sft_split: str = "train",
+    sft_limit: int | None = None,
+    orpo_data: str | None = None,
+    orpo_split: str = "train",
+    orpo_limit: int | None = None,
+    tokenizer: str | None = None,
 ) -> None:
     """Run full ML pipeline end-to-end."""
+    import gc
     import time
 
     from mlx.utils import tree_flatten
+    from rich.progress import BarColumn, Progress, TaskProgressColumn, TextColumn, TimeElapsedColumn
 
+    from bit_axon.cli._datasets import resolve_orpo_data, resolve_sft_data
     from bit_axon.config import BitAxonConfig
     from bit_axon.evaluation.perplexity import compute_perplexity
     from bit_axon.inference.loader import load_model
     from bit_axon.inference.sampling import sample_logits
     from bit_axon.model import BitAxonModel
     from bit_axon.quantization.nf4 import replace_linear_with_quantized
+    from bit_axon.tokenizer import QwenTokenizerWrapper
     from bit_axon.training.checkpoint import save_adapter_only
     from bit_axon.training.config import TrainingConfig
+    from bit_axon.training.data import ORPODataset, SFTDataset
     from bit_axon.training.lora import apply_lora_to_model
     from bit_axon.training.merging import load_and_merge, save_merged_model
     from bit_axon.training.orpo_trainer import ORPOTrainer
@@ -117,31 +129,92 @@ def pipeline_cmd(
     t_start = time.perf_counter()
     results: dict[str, float] = {}
 
-    print_info("Stage 1: SFT Training")
-    config = BitAxonConfig(**_SMALL_CONFIG)
-    model = BitAxonModel(config)
-    mx.eval(model.parameters())
+    # Validate dataset/tokenizer arguments
+    if (sft_data or orpo_data) and tokenizer is None:
+        from bit_axon.cli._console import print_error
 
-    base_dir.mkdir(parents=True, exist_ok=True)
-    mx.save_safetensors(str(base_dir / "weights.safetensors"), dict(tree_flatten(model.parameters())))
+        print_error("--tokenizer is required when using real datasets (--sft-data or --orpo-data)")
+        raise SystemExit(1)
 
-    apply_lora_to_model(model, rank=lora_rank, dropout=0.0, scale=20.0)
-    mx.eval(model.parameters())
+    tok = None
+    if sft_data is not None:
+        print_info("Stage 1: SFT Training (real dataset)")
+        if tokenizer is None:
+            raise RuntimeError("Tokenizer not initialized")
+        tok = QwenTokenizerWrapper(tokenizer)
+        resolved_sft = resolve_sft_data(sft_data, sft_split, sft_limit)
+        if resolved_sft is None:
+            raise RuntimeError("Failed to resolve SFT dataset")
+        config = BitAxonConfig(**{**_SMALL_CONFIG, "vocab_size": tok.vocab_size})
+        model = BitAxonModel(config)
+        mx.eval(model.parameters())
 
-    sft_config = TrainingConfig(
-        max_steps=max_steps,
-        grad_accum_steps=1,
-        batch_size=batch_size,
-        max_seq_len=max_seq_len,
-        learning_rate=1e-3,
-        lora_rank=lora_rank,
-        lora_scale=20.0,
-        use_dora=False,
-        save_every=10000,
-        output_dir=str(sft_dir),
-    )
-    trainer = Trainer(model, sft_config, SimpleDataset(50, max_seq_len, config.vocab_size))
-    with console.status("[bold green]SFT training...", spinner="dots"):
+        base_dir.mkdir(parents=True, exist_ok=True)
+        mx.save_safetensors(str(base_dir / "weights.safetensors"), dict(tree_flatten(model.parameters())))
+
+        apply_lora_to_model(model, rank=lora_rank, dropout=0.0, scale=20.0)
+        mx.eval(model.parameters())
+
+        sft_config = TrainingConfig(
+            max_steps=max_steps,
+            grad_accum_steps=1,
+            batch_size=batch_size,
+            max_seq_len=max_seq_len,
+            learning_rate=1e-3,
+            lora_rank=lora_rank,
+            lora_scale=20.0,
+            use_dora=False,
+            save_every=10000,
+            output_dir=str(sft_dir),
+        )
+        sft_dataset = SFTDataset(resolved_sft, tok, max_seq_len=max_seq_len)
+    else:
+        print_info("Stage 1: SFT Training")
+        config = BitAxonConfig(**_SMALL_CONFIG)
+        model = BitAxonModel(config)
+        mx.eval(model.parameters())
+
+        base_dir.mkdir(parents=True, exist_ok=True)
+        mx.save_safetensors(str(base_dir / "weights.safetensors"), dict(tree_flatten(model.parameters())))
+
+        apply_lora_to_model(model, rank=lora_rank, dropout=0.0, scale=20.0)
+        mx.eval(model.parameters())
+
+        sft_config = TrainingConfig(
+            max_steps=max_steps,
+            grad_accum_steps=1,
+            batch_size=batch_size,
+            max_seq_len=max_seq_len,
+            learning_rate=1e-3,
+            lora_rank=lora_rank,
+            lora_scale=20.0,
+            use_dora=False,
+            save_every=10000,
+            output_dir=str(sft_dir),
+        )
+        sft_dataset = SimpleDataset(50, max_seq_len, config.vocab_size)
+
+    with Progress(
+        TextColumn("[bold green]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeElapsedColumn(),
+        TextColumn("  loss: [yellow]{task.fields[loss]:.4f}[/]"),
+        TextColumn("  grad: [cyan]{task.fields[grad_norm]:.4f}[/]"),
+        console=console,
+    ) as progress:
+        task_id = progress.add_task("SFT Training", total=max_steps, loss=0.0, grad_norm=0.0)
+        trainer = Trainer(
+            model,
+            sft_config,
+            sft_dataset,
+            on_step=lambda s, m: progress.update(
+                task_id,
+                completed=s,
+                loss=m["loss"],
+                grad_norm=m["grad_norm"],
+            ),
+        )
         result = trainer.train()
     results["sft_loss"] = result["loss"]
 
@@ -149,6 +222,10 @@ def pipeline_cmd(
     adapter_path = str(sft_dir / "adapter.safetensors")
     save_adapter_only(model, adapter_path)
     print_success(f"SFT: step={result['step']}, loss={result['loss']:.4f}")
+
+    del model, trainer
+    gc.collect()
+    mx.clear_cache()
 
     print_info("Stage 2: Merge adapter into base")
     with console.status("[bold green]Merging adapter...", spinner="dots"):
@@ -178,18 +255,45 @@ def pipeline_cmd(
     results["ppl"] = ppl
     print_success(f"Perplexity: {ppl:.2f} +/- {se:.2f}")
 
+    bench_results = []
+    if tok is not None:
+        print_info("Stage 4b: Benchmark evaluation")
+        from bit_axon.evaluation.benchmark import evaluate_benchmarks
+        from bit_axon.evaluation.tasks import BenchmarkConfig
+
+        bench_config = BenchmarkConfig(limit=100, max_tokens=256)
+        bench_results = evaluate_benchmarks(merged_model, tok, config=bench_config, console=console)
+        for br in bench_results:
+            results[f"bench_{br.benchmark_name}"] = br.accuracy
+        print_success(f"Benchmarks: {', '.join(f'{r.benchmark_name}={r.accuracy:.1%}' for r in bench_results)}")
+
     print_info("Stage 5: Autoregressive inference")
     prompt_ids = mx.array([[1, 42, 100, 200, 500]], dtype=mx.uint32)
     logits, caches = merged_model(prompt_ids)
 
-    t_gen = time.perf_counter()
-    for _ in range(20):
-        next_token = sample_logits(logits[:, -1, :], temperature=0.8, top_k=50, top_p=0.95)
-        logits, caches = merged_model(mx.array([[int(next_token.item())]], dtype=mx.uint32), cache=caches)
-    mx.synchronize()
-    tok_s = 20 / (time.perf_counter() - t_gen)
+    gen_tokens = 20
+    with Progress(
+        TextColumn("[bold green]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        TextColumn("  [cyan]{task.fields[speed]:.1f}[/] tok/s"),
+        console=console,
+    ) as progress:
+        task_id = progress.add_task("Generating tokens", total=gen_tokens, speed=0.0)
+        t_gen = time.perf_counter()
+        for i in range(gen_tokens):
+            next_token = sample_logits(logits[:, -1, :], temperature=0.8, top_k=50, top_p=0.95)
+            logits, caches = merged_model(mx.array([[int(next_token.item())]], dtype=mx.uint32), cache=caches)
+            elapsed = time.perf_counter() - t_gen
+            progress.update(task_id, completed=i + 1, speed=(i + 1) / max(elapsed, 1e-9))
+        mx.synchronize()
+        tok_s = gen_tokens / (time.perf_counter() - t_gen)
     results["tok_s"] = tok_s
     print_success(f"Inference: {tok_s:.1f} tok/s")
+
+    del merged_model
+    gc.collect()
+    mx.clear_cache()
 
     print_info("Stage 6: ORPO preference alignment")
     orpo_model = BitAxonModel(config)
@@ -214,8 +318,38 @@ def pipeline_cmd(
         save_every=10000,
         output_dir=str(orpo_dir),
     )
-    orpo_trainer = ORPOTrainer(orpo_wrapper, orpo_config, SimpleORPODataset(50, max_seq_len, config.vocab_size))
-    with console.status("[bold green]ORPO training...", spinner="dots"):
+    if orpo_data is not None:
+        if tok is None:
+            if tokenizer is None:
+                raise RuntimeError("Tokenizer not initialized")
+            tok = QwenTokenizerWrapper(tokenizer)
+        resolved_orpo = resolve_orpo_data(orpo_data, orpo_split, orpo_limit)
+        if resolved_orpo is None:
+            raise RuntimeError("Failed to resolve ORPO dataset")
+        orpo_dataset = ORPODataset(resolved_orpo, tok, max_seq_len=max_seq_len)
+    else:
+        orpo_dataset = SimpleORPODataset(50, max_seq_len, config.vocab_size)
+    with Progress(
+        TextColumn("[bold green]{task.description}"),
+        BarColumn(),
+        TaskProgressColumn(),
+        TimeElapsedColumn(),
+        TextColumn("  loss: [yellow]{task.fields[loss]:.4f}[/]"),
+        TextColumn("  margin: [cyan]{task.fields[margin]:.4f}[/]"),
+        console=console,
+    ) as progress:
+        task_id = progress.add_task("ORPO Training", total=orpo_steps, loss=0.0, margin=0.0)
+        orpo_trainer = ORPOTrainer(
+            orpo_wrapper,
+            orpo_config,
+            orpo_dataset,
+            on_step=lambda s, m: progress.update(
+                task_id,
+                completed=s,
+                loss=m["loss"],
+                margin=m.get("reward_margin", 0.0),
+            ),
+        )
         orpo_result = orpo_trainer.train()
     results["orpo_loss"] = orpo_result["loss"]
 
@@ -223,6 +357,10 @@ def pipeline_cmd(
     orpo_adapter = str(orpo_dir / "orpo_adapter.safetensors")
     save_adapter_only(orpo_model, orpo_adapter)
     print_success(f"ORPO: step={orpo_result['step']}, loss={orpo_result['loss']:.4f}")
+
+    del orpo_model, orpo_wrapper, orpo_trainer
+    gc.collect()
+    mx.clear_cache()
 
     print_info("Stage 7: Final merge + quantize")
     with console.status("[bold green]Final merge + quantize...", spinner="dots"):
@@ -248,6 +386,8 @@ def pipeline_cmd(
     table.add_row("Perplexity", "PPL", f"{results['ppl']:.2f}")
     table.add_row("Inference", "Speed", f"{results['tok_s']:.1f} tok/s")
     table.add_row("ORPO", "Loss", f"{results['orpo_loss']:.4f}")
+    for br in bench_results if tok is not None else []:
+        table.add_row("Benchmark", br.benchmark_name, f"{br.accuracy:.1%}")
     table.add_row("Total", "Time", f"{elapsed:.1f}s")
     console.print(table)
 
@@ -259,4 +399,6 @@ def pipeline_cmd(
         f.write(f"Perplexity: {results['ppl']:.2f}\n")
         f.write(f"Inference: {results['tok_s']:.1f} tok/s\n")
         f.write(f"ORPO loss: {results['orpo_loss']:.4f}\n")
+        for br in bench_results if tok is not None else []:
+            f.write(f"Benchmark {br.benchmark_name}: {br.accuracy:.1%} ({br.correct}/{br.total})\n")
     print_success(f"Log saved to {log_path}")

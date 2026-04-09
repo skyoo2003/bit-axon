@@ -1,5 +1,7 @@
 """Shared Rich console helpers for the Bit-Axon CLI."""
 
+from __future__ import annotations
+
 from rich.console import Console
 
 console = Console()

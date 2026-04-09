@@ -186,11 +186,40 @@ def evaluate(
     seq_length: Annotated[int, typer.Option("--seq-length", help="Sequence length for evaluation")] = 2048,
     tokenizer: Annotated[str | None, typer.Option("--tokenizer", "-t", help="Tokenizer path or HF repo ID")] = None,
     batch_size: Annotated[int, typer.Option("--batch-size", help="Batch size")] = 4,
+    benchmarks: Annotated[
+        str | None,
+        typer.Option("--benchmarks", "-b", help="Comma-separated benchmarks: mmlu,gsm8k,arc_challenge,arc_easy,hellaswag,winogrande"),
+    ] = None,
+    benchmark_limit: Annotated[
+        int | None,
+        typer.Option("--benchmark-limit", help="Max samples per benchmark"),
+    ] = None,
 ) -> None:
     """Evaluate model perplexity on WikiText-103."""
-    from bit_axon.cli.evaluate import evaluate_cmd
+    if benchmarks is not None and tokenizer is None:
+        from bit_axon.cli._console import print_error
 
-    evaluate_cmd(model_path, config_small, max_tokens, seq_length, tokenizer, batch_size)
+        print_error("--tokenizer is required when using --benchmarks")
+        raise SystemExit(1)
+
+    if benchmarks is not None:
+        from bit_axon.cli.evaluate import evaluate_benchmarks_cmd
+
+        if tokenizer is None:
+            raise SystemExit(1)
+        benchmark_names = [b.strip() for b in benchmarks.split(",")]
+        evaluate_benchmarks_cmd(
+            model_path=model_path,
+            config_small=config_small,
+            tokenizer=tokenizer,
+            benchmarks=benchmark_names,
+            benchmark_limit=benchmark_limit,
+            max_tokens=max_tokens,
+        )
+    else:
+        from bit_axon.cli.evaluate import evaluate_cmd
+
+        evaluate_cmd(model_path, config_small, max_tokens, seq_length, tokenizer, batch_size)
 
 
 @app.command(name="port-weights")
@@ -212,11 +241,36 @@ def pipeline(
     max_seq_len: Annotated[int, typer.Option("--max-seq-len", help="Maximum sequence length")] = 32,
     lora_rank: Annotated[int, typer.Option("--lora-rank", help="LoRA adapter rank")] = 8,
     batch_size: Annotated[int, typer.Option("--batch-size", help="Batch size")] = 1,
+    sft_data: Annotated[
+        str | None, typer.Option("--sft-data", help="SFT dataset: preset name (ultrachat/alpaca/openorca), HuggingFace ID, or local JSONL path")
+    ] = None,
+    sft_split: Annotated[str, typer.Option("--sft-split", help="SFT dataset split")] = "train",
+    sft_limit: Annotated[int | None, typer.Option("--sft-limit", help="Max SFT rows to load")] = None,
+    orpo_data: Annotated[
+        str | None, typer.Option("--orpo-data", help="ORPO dataset: preset name (ultrafeedback/hh-rlhf), HuggingFace ID, or local JSONL path")
+    ] = None,
+    orpo_split: Annotated[str, typer.Option("--orpo-split", help="ORPO dataset split")] = "train",
+    orpo_limit: Annotated[int | None, typer.Option("--orpo-limit", help="Max ORPO rows to load")] = None,
+    tokenizer: Annotated[str | None, typer.Option("--tokenizer", "-t", help="Tokenizer name or path (required when using real datasets)")] = None,
 ) -> None:
-    """Run full ML pipeline: SFT, merge, quantize, evaluate, ORPO."""
+    """Run full ML pipeline: SFT, merge, quantize, evaluate, ORPO (supports real datasets)."""
     from bit_axon.cli.pipeline import pipeline_cmd
 
-    pipeline_cmd(output_dir, max_steps, orpo_steps, max_seq_len, lora_rank, batch_size)
+    pipeline_cmd(
+        output_dir=output_dir,
+        max_steps=max_steps,
+        orpo_steps=orpo_steps,
+        max_seq_len=max_seq_len,
+        lora_rank=lora_rank,
+        batch_size=batch_size,
+        sft_data=sft_data,
+        sft_split=sft_split,
+        sft_limit=sft_limit,
+        orpo_data=orpo_data,
+        orpo_split=orpo_split,
+        orpo_limit=orpo_limit,
+        tokenizer=tokenizer,
+    )
 
 
 @app.command()

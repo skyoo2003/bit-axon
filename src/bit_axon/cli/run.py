@@ -84,7 +84,8 @@ def _single_prompt(model, tokenizer, prompt: str, config, no_stream: bool) -> No
     from bit_axon.inference.generate import GenerateResult, generate
 
     result = generate(model, tokenizer, prompt, config=config, stream=False)
-    assert isinstance(result, GenerateResult)
+    if not isinstance(result, GenerateResult):
+        raise TypeError(f"Expected GenerateResult, got {type(result).__name__}")
     console.print(result.text)
     console.print(
         f"\n[dim]─── {result.completion_tokens} tokens · {result.tokens_per_sec:.1f} tok/s"
@@ -116,7 +117,8 @@ def _chat_loop(model, tokenizer, config, no_stream: bool) -> None:
         from bit_axon.inference.generate import GenerateResult, generate
 
         result = generate(model, tokenizer, "", config=config, stream=False, messages=messages)
-        assert isinstance(result, GenerateResult)
+        if not isinstance(result, GenerateResult):
+            raise TypeError(f"Expected GenerateResult, got {type(result).__name__}")
 
         console.print(f"[bold green]Assistant:[/bold green] {result.text}")
         console.print(f"[dim]─── {result.completion_tokens} tokens · {result.tokens_per_sec:.1f} tok/s ───[/dim]\n")

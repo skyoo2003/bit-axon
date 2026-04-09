@@ -1,5 +1,7 @@
 """Exception-to-friendly-message mapping for the CLI."""
 
+from __future__ import annotations
+
 
 def format_error(error: Exception) -> str:
     """Convert an exception to a user-friendly error message."""
