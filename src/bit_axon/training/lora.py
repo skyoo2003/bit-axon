@@ -1,10 +1,12 @@
-import math
+from __future__ import annotations
 
 import mlx.core as mx
 import mlx.nn as nn
 
+from bit_axon.training._adapter_base import _BaseAdapterLinear
 
-class LoRALinear(nn.Module):
+
+class LoRALinear(_BaseAdapterLinear):
     """Low-Rank Adaptation wrapper around a base Linear layer.
 
     Adds a trainable low-rank decomposition (lora_a @ lora_b) scaled by
@@ -24,15 +26,6 @@ class LoRALinear(nn.Module):
         lora_b: Low-rank matrix B of shape (r, output_dims), initialized to zeros.
         scale: Output scaling factor.
     """
-
-    def __init__(self, input_dims, output_dims, r=8, dropout=0.0, scale=20.0, bias=False):
-        super().__init__()
-        self.linear = nn.Linear(input_dims, output_dims, bias=bias)
-        self.dropout = nn.Dropout(p=dropout)
-        self.scale = scale
-        init_scale = 1.0 / math.sqrt(input_dims)
-        self.lora_a = mx.random.uniform(low=-init_scale, high=init_scale, shape=(input_dims, r))
-        self.lora_b = mx.zeros(shape=(r, output_dims))
 
     def __call__(self, x):
         y = self.linear(x)

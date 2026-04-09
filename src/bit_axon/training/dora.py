@@ -1,10 +1,12 @@
-import math
+from __future__ import annotations
 
 import mlx.core as mx
 import mlx.nn as nn
 
+from bit_axon.training._adapter_base import _BaseAdapterLinear
 
-class DoRALinear(nn.Module):
+
+class DoRALinear(_BaseAdapterLinear):
     """Weight-Decomposed Low-Rank Adaptation (DoRA) wrapper.
 
     Like LoRA but re-normalizes the adapted output to match the magnitude of the
@@ -28,13 +30,7 @@ class DoRALinear(nn.Module):
     """
 
     def __init__(self, input_dims, output_dims, r=8, dropout=0.0, scale=20.0, bias=False):
-        super().__init__()
-        self.linear = nn.Linear(input_dims, output_dims, bias=bias)
-        self.dropout = nn.Dropout(p=dropout)
-        self.scale = scale
-        init_scale = 1.0 / math.sqrt(input_dims)
-        self.lora_a = mx.random.uniform(low=-init_scale, high=init_scale, shape=(input_dims, r))
-        self.lora_b = mx.zeros(shape=(r, output_dims))
+        super().__init__(input_dims, output_dims, r, dropout, scale, bias)
         self.m = mx.linalg.norm(self.linear.weight.astype(mx.float32), axis=1)
         self._dora_w_sq_norm = mx.stop_gradient(mx.sum(self.linear.weight.astype(mx.float32) * self.linear.weight.astype(mx.float32), axis=1))
 
