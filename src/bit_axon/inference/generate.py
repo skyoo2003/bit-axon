@@ -65,8 +65,17 @@ def _prefill(model, token_ids: list[int]) -> tuple[mx.array, list, float, float]
     input_ids = mx.array([token_ids], dtype=mx.uint32)
     mx.synchronize()
     t_start = time.perf_counter()
-    logits, caches = model(input_ids)
-    mx.synchronize()
+    try:
+        logits, caches = model(input_ids)
+        mx.synchronize()
+    except Exception as exc:
+        max_id = max(token_ids) if token_ids else 0
+        raise RuntimeError(
+            f"Model forward pass failed during prefill. "
+            f"Prompt tokens: {len(token_ids)}, max token ID: {max_id}. "
+            f"Check that the model's vocab_size covers the tokenizer's range. "
+            f"Original error: {exc}"
+        ) from exc
     ttft_ms = (time.perf_counter() - t_start) * 1000.0
     return logits, caches, t_start, ttft_ms
 
