@@ -2,462 +2,462 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/changelog/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/changelog/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/changelog/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/contributing/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/contributing/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/contributing/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/faq/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/faq/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/faq/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/api/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/api/config/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/config/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/config/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/api/evaluation/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/evaluation/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/evaluation/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/api/inference/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/inference/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/inference/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/api/layers/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/layers/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/layers/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/api/model/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/model/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/model/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/api/profiling/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/profiling/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/profiling/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/api/quantization/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/quantization/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/quantization/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/api/tokenizer/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/tokenizer/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/tokenizer/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/api/training/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/training/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/training/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/architecture/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/architecture/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/architecture/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/architecture/axon-ssm/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/architecture/axon-ssm/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/architecture/axon-ssm/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/architecture/memory-budget/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/architecture/memory-budget/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/architecture/memory-budget/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/architecture/swa-moe/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/architecture/swa-moe/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/architecture/swa-moe/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/cli/reference/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/cli/reference/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/cli/reference/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/getting-started/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/getting-started/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/getting-started/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/getting-started/installation/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/getting-started/installation/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/getting-started/installation/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/getting-started/quickstart/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/getting-started/quickstart/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/getting-started/quickstart/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/guides/benchmarking/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/guides/benchmarking/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/guides/benchmarking/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/guides/inference/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/guides/inference/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/guides/inference/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/guides/porting/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/guides/porting/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/guides/porting/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/guides/quantization/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/guides/quantization/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/guides/quantization/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/guides/training/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/guides/training/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/guides/training/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/macos-app/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/macos-app/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/macos-app/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/papers/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/papers/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/papers/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/papers/axon-ssm/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/papers/axon-ssm/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/papers/axon-ssm/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/papers/sandwich-architecture/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/papers/sandwich-architecture/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/papers/sandwich-architecture/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/papers/thermal-training/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/papers/thermal-training/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/papers/thermal-training/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/papers/turboquant/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/papers/turboquant/"/>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/papers/turboquant/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/changelog/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/changelog/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/changelog/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/contributing/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/contributing/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/contributing/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/faq/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/faq/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/faq/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/api/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/api/config/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/config/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/config/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/api/evaluation/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/evaluation/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/evaluation/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/api/inference/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/inference/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/inference/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/api/layers/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/layers/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/layers/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/api/model/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/model/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/model/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/api/profiling/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/profiling/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/profiling/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/api/quantization/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/quantization/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/quantization/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/api/tokenizer/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/tokenizer/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/tokenizer/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/api/training/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/api/training/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/api/training/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/architecture/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/architecture/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/architecture/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/architecture/axon-ssm/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/architecture/axon-ssm/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/architecture/axon-ssm/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/architecture/memory-budget/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/architecture/memory-budget/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/architecture/memory-budget/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/architecture/swa-moe/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/architecture/swa-moe/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/architecture/swa-moe/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/cli/reference/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/cli/reference/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/cli/reference/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/getting-started/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/getting-started/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/getting-started/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/getting-started/installation/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/getting-started/installation/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/getting-started/installation/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/getting-started/quickstart/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/getting-started/quickstart/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/getting-started/quickstart/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/guides/benchmarking/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/guides/benchmarking/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/guides/benchmarking/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/guides/inference/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/guides/inference/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/guides/inference/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/guides/porting/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/guides/porting/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/guides/porting/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/guides/quantization/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/guides/quantization/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/guides/quantization/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/guides/training/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/guides/training/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/guides/training/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/macos-app/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/macos-app/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/macos-app/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/papers/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/papers/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/papers/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/papers/axon-ssm/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/papers/axon-ssm/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/papers/axon-ssm/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/papers/sandwich-architecture/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/papers/sandwich-architecture/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/papers/sandwich-architecture/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/papers/thermal-training/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/papers/thermal-training/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/papers/thermal-training/"/>
     </url>
     <url>
         <loc>https://skyoo2003.github.io/bit-axon/ko/papers/turboquant/</loc>
-        <lastmod>2026-04-08</lastmod>
+        <lastmod>2026-04-09</lastmod>
         <changefreq>daily</changefreq>
         <xhtml:link rel="alternate" hreflang="ko" href="https://skyoo2003.github.io/bit-axon/ko/papers/turboquant/"/>
         <xhtml:link rel="alternate" hreflang="en" href="https://skyoo2003.github.io/bit-axon/papers/turboquant/"/>
