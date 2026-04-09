@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import mlx.core as mx
 import mlx.nn as nn
 
@@ -76,12 +78,12 @@ class BitAxonModel(nn.Module):
         caches = []
         for i in range(self.config.num_layers):
             if self._get_layer_type(i, self.config.num_layers) == "swa_moe":
-                caches.append(KVCache())
+                caches.append(KVCache(window_size=self.config.swa_window_size))
             else:
                 caches.append(None)
         return caches
 
-    def __call__(self, input_ids: mx.array, cache=None):
+    def __call__(self, input_ids: mx.array, cache: list | None = None) -> tuple[mx.array, list]:
         """Forward pass through all layers.
 
         Args:
