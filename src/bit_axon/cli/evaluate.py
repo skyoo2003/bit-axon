@@ -53,6 +53,12 @@ def evaluate_cmd(
             tok = QwenTokenizerWrapper(tokenizer)
         print_success(f"Tokenizer loaded: {tokenizer}")
 
+    # Auto-resize model vocab if tokenizer has larger vocab
+    if tok is not None and model.config.vocab_size < tok.vocab_size:
+        from bit_axon.inference.loader import resize_model_vocab
+
+        resize_model_vocab(model, tok.vocab_size)
+
     with console.status("[bold green]Loading WikiText-103 test set..."):
         ds = WikiTextDataset(split="test", seq_length=seq_length, max_tokens=max_tokens, tokenizer=tok)
         all_tokens = mx.concatenate([ds[i] for i in range(len(ds))])
@@ -116,6 +122,12 @@ def evaluate_benchmarks_cmd(
 
         tok = QwenTokenizerWrapper(tokenizer)
     print_success(f"Tokenizer loaded: {tokenizer}")
+
+    # Auto-resize model vocab if tokenizer has larger vocab
+    if model.config.vocab_size < tok.vocab_size:
+        from bit_axon.inference.loader import resize_model_vocab
+
+        resize_model_vocab(model, tok.vocab_size)
 
     bench_config = BenchmarkConfig(benchmarks=benchmarks, limit=benchmark_limit, max_tokens=max_tokens)
     results = evaluate_benchmarks(model, tok, config=bench_config, console=console)
