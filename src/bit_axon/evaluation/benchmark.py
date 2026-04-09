@@ -80,7 +80,12 @@ def evaluate_benchmark(
         ) as progress:
             task_id = progress.add_task(benchmark_name, total=len(items), acc=0.0)
             for i, item in enumerate(items):
-                result = generate(model, tokenizer, task.format_prompt(item), gen_config)
+                try:
+                    result = generate(model, tokenizer, task.format_prompt(item), gen_config)
+                except Exception:
+                    correct += 0
+                    progress.update(task_id, completed=i + 1, acc=correct / (i + 1))
+                    continue
                 if not isinstance(result, GenerateResult):
                     raise TypeError(f"Expected GenerateResult, got {type(result).__name__}")
                 predicted = task.extract_answer(result.text)
@@ -93,7 +98,10 @@ def evaluate_benchmark(
                 progress.update(task_id, completed=i + 1, acc=correct / (i + 1))
     else:
         for item in items:
-            result = generate(model, tokenizer, task.format_prompt(item), gen_config)
+            try:
+                result = generate(model, tokenizer, task.format_prompt(item), gen_config)
+            except Exception:
+                continue
             if not isinstance(result, GenerateResult):
                 raise TypeError(f"Expected GenerateResult, got {type(result).__name__}")
             predicted = task.extract_answer(result.text)
