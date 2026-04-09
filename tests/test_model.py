@@ -1,28 +1,9 @@
 import mlx.core as mx
 import mlx.utils
-import pytest
 
 from bit_axon.config import BitAxonConfig
 from bit_axon.layers.block import AxonSSMBlock, AxonSSMMoEBlock, AxonSWAMoEBlock
 from bit_axon.model import BitAxonModel
-
-
-@pytest.fixture
-def small_config() -> BitAxonConfig:
-    return BitAxonConfig(
-        hidden_dim=256,
-        num_layers=4,
-        num_heads=4,
-        d_source_model=128,
-        vocab_size=1024,
-        ssm_d_state=4,
-        ssm_d_conv=2,
-        ssm_expand=2,
-        swa_window_size=64,
-        moe_num_experts=4,
-        moe_top_k=2,
-        moe_intermediate_dim=512,
-    )
 
 
 def test_forward_pass_shape(small_config):
