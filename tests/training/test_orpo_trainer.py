@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+from unittest.mock import MagicMock
 
 import mlx.core as mx
 import mlx.nn as nn
@@ -184,3 +185,54 @@ class TestORPOTrainerIntegration:
         trainer = ORPOTrainer(model, config, dataset, cooling_scheduler=cooling)
         trainer.train()
         assert cooling.calls == 3
+
+
+class TestORPOTrainerOnStep:
+    def test_on_step_called_correct_number_of_times(self, tmp_path):
+        model = SimpleLM(vocab_size=50, hidden_dim=16)
+        mx.eval(model.parameters())
+        dataset = MockORPODataset(n=10, seq_len=8, vocab_size=50)
+        config = _make_config(tmp_path, max_steps=5)
+        callback = MagicMock()
+        trainer = ORPOTrainer(model, config, dataset, on_step=callback)
+        trainer.train()
+        assert callback.call_count == 5
+
+    def test_on_step_receives_step_and_metrics(self, tmp_path):
+        model = SimpleLM(vocab_size=50, hidden_dim=16)
+        mx.eval(model.parameters())
+        dataset = MockORPODataset(n=10, seq_len=8, vocab_size=50)
+        config = _make_config(tmp_path, max_steps=3)
+        callback = MagicMock()
+        trainer = ORPOTrainer(model, config, dataset, on_step=callback)
+        trainer.train()
+        for call in callback.call_args_list:
+            step, metrics = call.args
+            assert isinstance(step, int)
+            assert isinstance(metrics, dict)
+            assert "loss" in metrics
+            assert "grad_norm" in metrics
+            assert "chosen_logps" in metrics
+            assert "rejected_logps" in metrics
+            assert "reward_margin" in metrics
+
+    def test_on_step_step_values_increment(self, tmp_path):
+        model = SimpleLM(vocab_size=50, hidden_dim=16)
+        mx.eval(model.parameters())
+        dataset = MockORPODataset(n=10, seq_len=8, vocab_size=50)
+        config = _make_config(tmp_path, max_steps=4)
+        callback = MagicMock()
+        trainer = ORPOTrainer(model, config, dataset, on_step=callback)
+        trainer.train()
+        steps = [call.args[0] for call in callback.call_args_list]
+        assert steps == [1, 2, 3, 4]
+
+    def test_no_callback_backward_compat(self, tmp_path):
+        model = SimpleLM(vocab_size=50, hidden_dim=16)
+        mx.eval(model.parameters())
+        dataset = MockORPODataset(n=10, seq_len=8, vocab_size=50)
+        config = _make_config(tmp_path, max_steps=3)
+        trainer = ORPOTrainer(model, config, dataset)
+        result = trainer.train()
+        assert result["step"] == 3
+        assert isinstance(result["loss"], float)

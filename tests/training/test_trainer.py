@@ -298,3 +298,64 @@ class TestTrainer:
         trainer = Trainer(model, config, dataset, cooling_scheduler=cooling)
         result = trainer.train()
         assert result["step"] == 2
+
+
+class TestTrainerOnStep:
+    def test_on_step_callback_fired(self, small_config, tmp_path):
+        from unittest.mock import MagicMock
+
+        model = BitAxonModel(small_config)
+        mx.eval(model.parameters())
+        apply_lora_to_model(model, rank=4, dropout=0.0, scale=10.0)
+        mx.eval(model.parameters())
+
+        config = TrainingConfig(
+            max_steps=3,
+            batch_size=1,
+            max_seq_len=16,
+            learning_rate=1e-3,
+            lora_rank=4,
+            lora_scale=10.0,
+            save_every=10000,
+            output_dir=str(tmp_path / "ckpts"),
+        )
+        dataset = SimpleDataset(10, 16, small_config.vocab_size)
+
+        callback = MagicMock()
+        trainer = Trainer(model, config, dataset, on_step=callback)
+        trainer.train()
+
+        assert callback.call_count == 3
+        calls = callback.call_args_list
+        assert calls[0][0][0] == 1
+        assert calls[1][0][0] == 2
+        assert calls[2][0][0] == 3
+
+    def test_on_step_callback_receives_metrics(self, small_config, tmp_path):
+        from unittest.mock import MagicMock
+
+        model = BitAxonModel(small_config)
+        mx.eval(model.parameters())
+        apply_lora_to_model(model, rank=4, dropout=0.0, scale=10.0)
+        mx.eval(model.parameters())
+
+        config = TrainingConfig(
+            max_steps=2,
+            batch_size=1,
+            max_seq_len=16,
+            learning_rate=1e-3,
+            lora_rank=4,
+            lora_scale=10.0,
+            save_every=10000,
+            output_dir=str(tmp_path / "ckpts"),
+        )
+        dataset = SimpleDataset(10, 16, small_config.vocab_size)
+
+        callback = MagicMock()
+        trainer = Trainer(model, config, dataset, on_step=callback)
+        trainer.train()
+
+        metrics = callback.call_args_list[0][0][1]
+        assert "loss" in metrics
+        assert "grad_norm" in metrics
+        assert isinstance(metrics["loss"], float)
