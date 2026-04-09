@@ -22,7 +22,7 @@ def _make_fake_dataset(rows):
 
 class TestCLIPipeline:
     def test_help(self):
-        result = runner.invoke(app, ["pipeline", "--help"])
+        result = runner.invoke(app, ["pipeline", "--help"], color=False)
         assert result.exit_code == 0
         assert "pipeline" in result.output.lower()
         assert "train" in result.output.lower()
