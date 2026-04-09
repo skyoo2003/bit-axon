@@ -98,6 +98,7 @@ DerivedData/
 
 # Data
 data/
+org_repo_train.jsonl
 
 # Logs
 *.log
