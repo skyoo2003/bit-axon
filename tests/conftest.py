@@ -1,7 +1,24 @@
+import os
+
 import mlx.core as mx
 import pytest
 
 from bit_axon.config import BitAxonConfig
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Set environment variables before test collection to prevent Rich/tqdm threading crashes.
+
+    Rich's ``console.status()`` spawns a background ``Live`` thread, and the ``datasets``
+    library (used by some CLI commands) triggers ``tqdm``'s ``_monitor`` thread.  On
+    macOS / CPython 3.10 these threads race on the redirected stdout inside Typer's
+    ``CliRunner``, producing a SIGABRT (exit 134).  Setting these vars at *session*
+    scope—before any production module is imported—avoids the crash both locally and
+    in CI.
+    """
+    os.environ.setdefault("TERM", "dumb")
+    os.environ.setdefault("NO_COLOR", "1")
+    os.environ.setdefault("TQDM_DISABLE", "1")
 
 
 @pytest.fixture
