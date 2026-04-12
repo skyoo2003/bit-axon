@@ -32,7 +32,7 @@ dependencies = [
 bit-axon = "bit_axon.cli.main:main"
 
 [project.optional-dependencies]
-dev = ["pre-commit>=4.1", "pytest>=7.0", "pytest-xdist>=3.0", "ruff>=0.9", "datasets>=2.14"]
+dev = ["pre-commit>=4.1", "pytest>=9.0.3", "pytest-xdist>=3.0", "ruff>=0.9", "datasets>=2.14"]
 training = []
 porting = []
 evaluation = ["datasets>=2.14"]
