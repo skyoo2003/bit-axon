@@ -39,7 +39,7 @@ evaluation = ["datasets>=2.14"]
 docs = [
     "mkdocs-material>=9.5",
     "mkdocs-static-i18n>=1.0",
-    "mkdocstrings[python]>=0.25",
+    "mkdocstrings[python]>=1.0.3",
     "mkdocs-autorefs",
     "mkdocs-glightbox",
     "mkdocs-git-revision-date-localized-plugin",
