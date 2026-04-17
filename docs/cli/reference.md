@@ -159,6 +159,28 @@ bit-axon download [REPO_ID] [OPTIONS]
 | `--local-dir` / `-d` | `str` | `None` | Local directory to save files into |
 | `--include` | `list[str]` | `None` | Glob patterns of files to include |
 
+### `bit-axon upload`
+
+Upload a model to Hugging Face Hub.
+
+```bash
+bit-axon upload models/merged -r skyoo2003/bit-axon -t Qwen/Qwen2.5-3B
+```
+
+**Usage**
+
+```
+bit-axon upload MODEL_PATH [OPTIONS]
+```
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `--repo-id` / `-r` | `str` | `skyoo2003/bit-axon` | Hugging Face repository ID |
+| `--tokenizer` / `-t` | `str` | `Qwen/Qwen2.5-3B` | Tokenizer name or path |
+| `--private` | `bool` | `False` | Create a private repository |
+| `--commit-message` / `-m` | `str` | `Upload Bit-Axon 3.2B model` | Commit message for the upload |
+| `--benchmark-results` | `str` | `None` | Comma-separated benchmark results, e.g. `mmlu=0.45,gsm8k=0.32` |
+
 ### `bit-axon port-weights`
 
 Port model weights to the Bit-Axon format.

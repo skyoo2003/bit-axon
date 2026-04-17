@@ -159,6 +159,28 @@ bit-axon download [REPO_ID] [OPTIONS]
 | `--local-dir` / `-d` | `str` | `None` | 파일을 저장할 로컬 디렉토리 |
 | `--include` | `list[str]` | `None` | 포함할 파일의 glob 패턴 |
 
+### `bit-axon upload`
+
+모델을 Hugging Face Hub에 업로드합니다.
+
+```bash
+bit-axon upload models/merged -r skyoo2003/bit-axon -t Qwen/Qwen2.5-3B
+```
+
+**사용법**
+
+```
+bit-axon upload MODEL_PATH [OPTIONS]
+```
+
+| 옵션 | 타입 | 기본값 | 설명 |
+|---|---|---|---|
+| `--repo-id` / `-r` | `str` | `skyoo2003/bit-axon` | Hugging Face 저장소 ID |
+| `--tokenizer` / `-t` | `str` | `Qwen/Qwen2.5-3B` | Tokenizer 이름 또는 경로 |
+| `--private` | `bool` | `False` | 비공개 저장소로 생성 |
+| `--commit-message` / `-m` | `str` | `Upload Bit-Axon 3.2B model` | 업로드 커밋 메시지 |
+| `--benchmark-results` | `str` | `None` | 쉼표로 구분된 벤치마크 결과, 예: `mmlu=0.45,gsm8k=0.32` |
+
 ### `bit-axon port-weights`
 
 모델 가중치를 Bit-Axon 형식으로 변환합니다.

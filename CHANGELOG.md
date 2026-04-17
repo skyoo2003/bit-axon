@@ -9,8 +9,34 @@ All notable changes to this project will be documented in this file.
 - CLI: `port-weights` command for Qwen2.5-3B to Bit-Axon format conversion
 - CLI: `pipeline` module for end-to-end ML workflow (SFT → merge → quantize → evaluate → inference → ORPO)
 - CLI: `prepare` command for dataset format conversion (alpaca, messages, orpo)
+- CLI: `upload` command for HuggingFace Hub model publishing
+- CLI: `--config-medium` flag across all commands (~1.5B param preset)
+- CLI: `--low-memory` and `--scoring-method` flags for training and evaluation
 - Evaluation: custom tokenizer support in `WikiTextDataset`
+- Evaluation: log-probability scoring for multiple-choice benchmarks (MMLU, ARC, HellaSwag, WinoGrande)
+- Evaluation: configurable few-shot counts wired from config to all tasks
+- Evaluation: failure counting and per-category scoring in benchmark results
+- Training: `BitAxonConfig.medium()` preset (12 layers, hidden_dim=2048)
+- Training: `TrainingConfig.low_memory()` preset (batch=1, seq=256, accum=8, rank=4)
+- Training: `TrainingConfig.fast_dev()` preset (100 steps)
+- Training: checkpoint resume with correct LR schedule offset
+- Training: evaluation results passed through `on_step` callback
+- Pipeline: WikiText-103 perplexity evaluation when tokenizer available
+- Pipeline: optional HuggingFace upload step (Stage 8)
+- Pipeline: training metrics collection and crash recovery with partial results
+- Infrastructure: GitHub Discussions enabled
+- Infrastructure: community labels (priority levels, area tags, stale, triage)
+- Infrastructure: stale bot workflow (14d issues / 7d PRs auto-close)
+- Infrastructure: release-drafter workflow for automatic changelogs
+- Infrastructure: FUNDING.yml for GitHub Sponsors
+- Infrastructure: `.gitattributes` for binary detection
 - Tests: public API smoke tests and CLI command tests (evaluate, pipeline, port-weights, prepare)
+
+### Changed
+- License changed from MIT to Apache 2.0
+- `pyproject.toml`: expanded classifiers, added `[project.urls]` section
+- `pyproject.toml`: dependency bumps (rich≥14.3.4, numpy≥2.2.6, pytest≥9.0.3, setuptools≥82.0.1, mkdocstrings≥1.0.3)
+- CI: actions versions updated (checkout v6, setup-python v6, download-artifact v8)
 
 ## [0.1.0] - 2026-04-07
 

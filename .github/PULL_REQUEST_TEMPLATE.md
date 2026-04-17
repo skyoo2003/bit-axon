@@ -19,5 +19,8 @@
 ## AI Assistance
 - [ ] This PR was generated or assisted by AI tools <!-- If yes, please describe what tools and how they were used -->
 
+## Changelog
+- [ ] If this PR introduces user-facing changes, update `CHANGELOG.md`
+
 ## Additional Notes
 <!-- Any additional context for reviewers -->

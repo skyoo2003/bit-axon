@@ -283,4 +283,4 @@ chore(ci): add parallel test execution to GitHub Actions
 
 ## 라이선스
 
-Bit-Axon은 [MIT 라이선스](https://github.com/skyoo2003/bit-axon/blob/main/LICENSE)로 배포됩니다. 기여함으로써 기여물이 동일한 조건으로 라이선스됨에 동의하는 것입니다.
+Bit-Axon은 [Apache 2.0 라이선스](https://github.com/skyoo2003/bit-axon/blob/main/LICENSE)로 배포됩니다. 기여함으로써 기여물이 동일한 조건으로 라이선스됨에 동의하는 것입니다.

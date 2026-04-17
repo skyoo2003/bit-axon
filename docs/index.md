@@ -13,7 +13,7 @@ pip install bit-axon
 ```
 
 [![PyPI](https://img.shields.io/pypi/v/bit-axon?color=blue&label=pypi)](https://pypi.org/project/bit-axon/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/skyoo2003/bit-axon)
+[![License](https://img.shields.io/badge/license-Apache_2.0-green.svg)](https://github.com/skyoo2003/bit-axon)
 
 ---
 
@@ -64,7 +64,7 @@ Built with **Python + Apple MLX** (not PyTorch), Bit-Axon runs a 24-layer hybrid
 
     :material-open-source-initiative: &nbsp; **Fully Open Source**
 
-    MIT licensed. PyPI package for pip installs. HuggingFace model hub for weights and datasets. GitHub for everything else.
+    Apache 2.0 licensed. PyPI package for pip installs. HuggingFace model hub for weights and datasets. GitHub for everything else.
 
 ---
 
@@ -92,13 +92,13 @@ bit-axon chat --model skyoo2003/bit-axon
 
 | Component | Choice |
 |-----------|--------|
-| Language | Python 3.11+ |
+| Language | Python 3.10+ |
 | ML Framework | Apple MLX |
 | Architecture | Axon-SSM + SWA + MoE |
 | Parameters | 3.2B |
 | Quantization | Q4 (~1.76GB) |
 | Desktop App | SwiftUI (macOS) |
-| License | MIT |
+| License | Apache 2.0 |
 
 ---
 

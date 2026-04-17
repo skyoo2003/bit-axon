@@ -1,3 +1,5 @@
+"""Model layers: SSM, attention, MoE, and normalization."""
+
 from bit_axon.layers.axon_ssm import AxonSSM
 from bit_axon.layers.block import AxonSSMBlock, AxonSSMMoEBlock, AxonSWAMoEBlock
 from bit_axon.layers.moe import MLP, SharedExpertMoE, SwitchGLU, SwitchLinear

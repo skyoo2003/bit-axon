@@ -194,6 +194,8 @@ nav:
       - Quantization: api/quantization.md
       - Profiling: api/profiling.md
       - Evaluation: api/evaluation.md
+      - Porting: api/porting.md
+      - Utilities: api/utils.md
   - Guides:
       - Training: guides/training.md
       - Quantization: guides/quantization.md

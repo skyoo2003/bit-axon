@@ -1,3 +1,5 @@
+"""Weight quantization: NF4, ternary (BitNet), and TurboQuant KV cache compression."""
+
 from __future__ import annotations
 
 from bit_axon.quantization.nf4 import (

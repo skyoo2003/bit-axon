@@ -13,7 +13,7 @@ pip install bit-axon
 ```
 
 [![PyPI](https://img.shields.io/pypi/v/bit-axon?color=blue&label=pypi)](https://pypi.org/project/bit-axon/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/skyoo2003/bit-axon)
+[![License](https://img.shields.io/badge/license-Apache_2.0-green.svg)](https://github.com/skyoo2003/bit-axon)
 
 ---
 
@@ -64,7 +64,7 @@ pip install bit-axon
 
     :material-open-source-initiative: &nbsp; **완전 오픈소스**
 
-    MIT 라이선스. PyPI 패키지로 `pip install` 가능. HuggingFace에서 가중치와 데이터셋 제공. 나머지는 모두 GitHub에서 관리합니다.
+    Apache 2.0 라이선스. PyPI 패키지로 `pip install` 가능. HuggingFace에서 가중치와 데이터셋 제공. 나머지는 모두 GitHub에서 관리합니다.
 
 ---
 
@@ -92,13 +92,13 @@ bit-axon chat --model skyoo2003/bit-axon
 
 | 구성 요소 | 선택 |
 |-----------|------|
-| 언어 | Python 3.11+ |
+| 언어 | Python 3.10+ |
 | ML 프레임워크 | Apple MLX |
 | 아키텍처 | Axon-SSM + SWA + MoE |
 | 파라미터 | 3.2B |
 | 양자화 | Q4 (~1.76GB) |
 | 데스크톱 앱 | SwiftUI (macOS) |
-| 라이선스 | MIT |
+| 라이선스 | Apache 2.0 |
 
 ---
 
