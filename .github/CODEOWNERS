@@ -1,2 +1,27 @@
 # Default owner for everything
 * @skyoo2003
+
+# Documentation
+/docs/ @skyoo2003
+
+# GitHub Actions
+/.github/workflows/ @skyoo2003
+
+# Model configuration
+/src/bit_axon/config.py @skyoo2003
+
+# Training pipeline
+/src/bit_axon/training/ @skyoo2003
+/src/bit_axon/cli/train.py @skyoo2003
+/src/bit_axon/cli/pipeline.py @skyoo2003
+
+# Evaluation
+/src/bit_axon/evaluation/ @skyoo2003
+/src/bit_axon/cli/evaluate.py @skyoo2003
+
+# Quantization
+/src/bit_axon/quantization/ @skyoo2003
+
+# Model layers
+/src/bit_axon/layers/ @skyoo2003
+/src/bit_axon/model.py @skyoo2003

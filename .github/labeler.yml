@@ -1,0 +1,20 @@
+"bug":
+  - changed-files:
+      - any-glob-to-any-file: ["src/**"]
+  - head-branch: ["^fix/", "fix/"]
+
+"enhancement":
+  - head-branch: ["^feat/", "feature/"]
+
+"documentation":
+  - changed-files:
+      - any-glob-to-any-file: ["docs/**", "**/*.md"]
+      - all-globs-to-all-files: "!CHANGELOG.md"
+
+"dependencies":
+  - changed-files:
+      - any-glob-to-any-file: ["pyproject.toml"]
+
+"github-actions":
+  - changed-files:
+      - any-glob-to-any-file: [".github/workflows/**"]
