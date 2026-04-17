@@ -24,6 +24,7 @@ env/
 # Testing
 .pytest_cache/
 .coverage
+coverage.xml
 htmlcov/
 .tox/
 .nox/
@@ -42,9 +43,10 @@ htmlcov/
 *.pth
 *.onnx
 *.ckpt
-*.mlx/
 *.mlmodel
+*.mlmodelc
 *.mlpackage/
+*.ot
 checkpoints/
 wandb/
 runs/
@@ -68,6 +70,8 @@ model/.cache/
 *.swo
 *~
 *.iml
+*.bak
+*.orig
 
 # Jupyter
 .ipynb_checkpoints/
@@ -102,6 +106,17 @@ org_repo_train.jsonl
 
 # Logs
 *.log
+
+# Profiling
+*.prof
+*.pstats
+
+# Python tooling
+.python-version
+uv.lock
+
+# Claude Code
+.claude/
 
 # Project-related
 /docs/specs/

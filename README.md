@@ -3,7 +3,7 @@
 **Minimal Bits, Maximal Impulse**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache_2.0-green.svg)](LICENSE)
 [![PyPI version](https://img.shields.io/pypi/v/bit-axon.svg)](https://pypi.org/project/bit-axon/)
 [![Platform: Apple Silicon](https://img.shields.io/badge/platform-Apple%20Silicon-black.svg)]()
 
@@ -203,4 +203,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on submitting issues, open
 
 ## License
 
-Bit-Axon is released under the [MIT License](LICENSE).
+Bit-Axon is released under the [Apache License 2.0](LICENSE).

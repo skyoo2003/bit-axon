@@ -7,13 +7,13 @@ name = "bit-axon"
 version = "0.1.0"
 description = "Bit-Axon 3B: Minimal Bits, Maximal Impulse — sLLM engine for Apple Silicon"
 readme = "README.md"
-license = "MIT"
+license = "Apache-2.0"
 requires-python = ">=3.10"
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: MIT License",
+  "License :: OSI Approved :: Apache Software License",
   "Operating System :: MacOS",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.10",

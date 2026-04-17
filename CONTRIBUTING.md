@@ -228,4 +228,4 @@ If you're unsure whether something is a bug, open an issue anyway. We'd rather t
 
 ## License
 
-Bit-Axon is released under the [MIT License](LICENSE). By contributing, you agree that your contributions will be licensed under the same terms.
+Bit-Axon is released under the [Apache License 2.0](LICENSE). By contributing, you agree that your contributions will be licensed under the same terms.
