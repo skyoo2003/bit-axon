@@ -34,6 +34,7 @@ class BenchmarkResult:
     correct: int
     time_seconds: float
     category_scores: dict[str, tuple[float, int, int]] = field(default_factory=dict)
+    failed: int = 0
 
 
 def evaluate_benchmark(
@@ -56,18 +57,28 @@ def evaluate_benchmark(
             def _loading_cb(msg: str) -> None:
                 status.update(f"[bold green]{msg}")
 
-            items = task.load_data(limit=config.limit, status_callback=_loading_cb)
+            items = task.load_data(limit=config.limit, num_few_shot=config.num_few_shot, status_callback=_loading_cb)
     else:
-        items = task.load_data(limit=config.limit)
+        items = task.load_data(limit=config.limit, num_few_shot=config.num_few_shot)
 
     max_tokens = _TASK_MAX_TOKENS.get(benchmark_name, config.max_tokens)
     gen_config = GenerateConfig(max_tokens=max_tokens, temperature=0.0, top_k=0, top_p=1.0)
+    use_logprob = config.scoring_method == "logprob" and benchmark_name != "gsm8k"
 
     correct = 0
+    failed = 0
     category_correct: dict[str, int] = {}
     category_total: dict[str, int] = {}
 
     t_start = time.perf_counter()
+
+    def _evaluate_item(item):
+        if use_logprob:
+            return task.score_by_logprobs(model, tokenizer, item)
+        result = generate(model, tokenizer, task.format_prompt(item), gen_config)
+        if not isinstance(result, GenerateResult):
+            raise TypeError(f"Expected GenerateResult, got {type(result).__name__}")
+        return task.extract_answer(result.text)
 
     if console is not None:
         with Progress(
@@ -81,35 +92,32 @@ def evaluate_benchmark(
             task_id = progress.add_task(benchmark_name, total=len(items), acc=0.0)
             for i, item in enumerate(items):
                 try:
-                    result = generate(model, tokenizer, task.format_prompt(item), gen_config)
+                    predicted = _evaluate_item(item)
                 except Exception:
-                    correct += 0
+                    failed += 1
                     progress.update(task_id, completed=i + 1, acc=correct / (i + 1))
                     continue
-                if not isinstance(result, GenerateResult):
-                    raise TypeError(f"Expected GenerateResult, got {type(result).__name__}")
-                predicted = task.extract_answer(result.text)
-                if task.check_answer(predicted, item.answer):
+                is_correct = task.check_answer(predicted, item.answer)
+                if is_correct:
                     correct += 1
                 if item.category:
                     category_total[item.category] = category_total.get(item.category, 0) + 1
-                    if task.check_answer(predicted, item.answer):
+                    if is_correct:
                         category_correct[item.category] = category_correct.get(item.category, 0) + 1
                 progress.update(task_id, completed=i + 1, acc=correct / (i + 1))
     else:
         for item in items:
             try:
-                result = generate(model, tokenizer, task.format_prompt(item), gen_config)
+                predicted = _evaluate_item(item)
             except Exception:
+                failed += 1
                 continue
-            if not isinstance(result, GenerateResult):
-                raise TypeError(f"Expected GenerateResult, got {type(result).__name__}")
-            predicted = task.extract_answer(result.text)
-            if task.check_answer(predicted, item.answer):
+            is_correct = task.check_answer(predicted, item.answer)
+            if is_correct:
                 correct += 1
             if item.category:
                 category_total[item.category] = category_total.get(item.category, 0) + 1
-                if task.check_answer(predicted, item.answer):
+                if is_correct:
                     category_correct[item.category] = category_correct.get(item.category, 0) + 1
 
     elapsed = time.perf_counter() - t_start
@@ -131,6 +139,7 @@ def evaluate_benchmark(
         correct=correct,
         time_seconds=elapsed,
         category_scores=category_scores,
+        failed=failed,
     )
 
 

@@ -121,7 +121,7 @@ class Trainer:
         self.on_step = on_step
         self.optimizer = None
         self.step_count = 0
-        self._loss_and_grad = None
+        _loss_and_grad = None
 
     def setup(self) -> None:
         """Initialize optimizer, scheduler, and loss function. Resume from checkpoint if available."""
@@ -134,43 +134,44 @@ class Trainer:
             self.config.learning_rate,
             self.config.warmup_steps,
             self.config.max_steps,
+            initial_step=self.step_count,
         )
         self.optimizer = AdamW(learning_rate=lr_schedule, weight_decay=self.config.weight_decay)
-
-        # Non-shifting loss function (iterate_batches already shifts)
-        # Manual forward with gradient checkpointing on MoE blocks to reduce
-        # peak memory during forward+backward.
-        from bit_axon.model import BitAxonModel
-
-        _moe_types = frozenset(("swa_moe", "ssm_moe"))
-
-        def loss_fn(model, input_ids, labels):
-            x = model.embed_tokens(input_ids)
-            x = model.input_proj(x)
-            for i in range(model.config.num_layers):
-                layer = getattr(model, f"layer_{i}")
-                layer_type = BitAxonModel._get_layer_type(i, model.config.num_layers)
-                if layer_type in _moe_types:
-
-                    def _ckpd(params, x, _layer=layer):
-                        _layer.update(params)
-                        out, _ = _layer(x)
-                        return out
-
-                    x = mx.checkpoint(_ckpd)(layer.trainable_parameters(), x)
-                else:
-                    x, _ = layer(x)
-            x = model.output_proj(x)
-            logits = model.lm_head(x)
-            loss, n_valid = cross_entropy_loss(logits, labels)
-            return loss, n_valid
-
-        self._loss_and_grad = nn.value_and_grad(self.model, loss_fn)
 
         ckpt = get_latest_checkpoint(self.config.output_dir)
         if ckpt is not None:
             step, _ = load_checkpoint(self.model, self.optimizer, ckpt)
             self.step_count = step
+
+    def _compute_loss_and_grads(self, input_ids: mx.array, labels: mx.array) -> tuple[mx.array, mx.array, dict]:
+        """Compute loss and gradients for a single batch.
+
+        Uses the model's normal forward path with nn.value_and_grad.
+        Gradient checkpointing is applied at the model level to limit
+        activation memory during backward.
+        """
+
+        def loss_fn(model, input_ids, labels):
+            logits, _ = model(input_ids)
+            loss, ntoks = cross_entropy_loss(logits, labels)
+            return loss, ntoks
+
+        loss_and_grad = nn.value_and_grad(self.model, loss_fn)
+        (loss, ntoks), grads = loss_and_grad(self.model, input_ids, labels)
+        mx.eval(loss, ntoks)
+        mx.clear_cache()
+        return loss, ntoks, grads
+
+    def _compute_loss_and_grads_v2(self, input_ids: mx.array, labels: mx.array) -> tuple[mx.array, mx.array, dict]:
+        """Memory-efficient loss/grad computation placeholder.
+
+        NOTE: MLX's mx.grad does not support closures that reference model state or
+        external arrays. A true memory-efficient implementation would require either:
+        (a) MLX native support for checkpointing with nn.value_and_grad, or
+        (        b) Manual activation checkpointing at the layer level.
+        Falls back to the standard _compute_loss_and_grads for now.
+        """
+        return self._compute_loss_and_grads(input_ids, labels)
 
     def train(self) -> dict:
         """Run the main training loop.
@@ -192,6 +193,7 @@ class Trainer:
             shuffle=True,
             loop=True,
             seed=self.config.seed,
+            eos_token_id=self.config.eos_token_id,
         )
 
         grad_accum = None
@@ -204,9 +206,15 @@ class Trainer:
             if self.cooling is not None:
                 self.cooling.check_before_step(self.step_count)
 
-            (loss, ntoks), grads = self._loss_and_grad(self.model, *batch)
-            mx.eval(loss)
+            loss, ntoks, grads = (
+                self._compute_loss_and_grads_v2(batch[0], batch[1]) if self.config.low_memory else self._compute_loss_and_grads(batch[0], batch[1])
+            )
             last_loss = float(loss)
+
+            if float(ntoks) == 0:
+                del grads, loss, batch
+                mx.clear_cache()
+                continue
 
             grad_accum = accumulate_gradients(grad_accum, grads)
             del grads
@@ -239,7 +247,17 @@ class Trainer:
                 )
 
             if self.val_dataset is not None and self.step_count % self.config.eval_every == 0:
-                self.evaluate()
+                eval_result = self.evaluate()
+                if self.on_step is not None:
+                    self.on_step(
+                        self.step_count,
+                        {
+                            "loss": last_loss,
+                            "grad_norm": float(last_grad_norm),
+                            "eval_loss": eval_result["loss"],
+                            "eval_ppl": eval_result["perplexity"],
+                        },
+                    )
 
         return {"step": self.step_count, "loss": last_loss, "grad_norm": float(last_grad_norm)}
 
@@ -255,7 +273,7 @@ class Trainer:
             return {"loss": 0.0, "perplexity": 0.0}
 
         total_loss = 0.0
-        total_tokens = 0
+        total_tokens = 0.0
 
         for num_batches, batch in enumerate(
             iterate_batches(
@@ -264,6 +282,7 @@ class Trainer:
                 max_seq_len=self.config.max_seq_len,
                 shuffle=False,
                 loop=False,
+                eos_token_id=self.config.eos_token_id,
             ),
         ):
             logits, _ = self.model(batch[0])

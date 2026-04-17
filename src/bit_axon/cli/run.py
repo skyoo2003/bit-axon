@@ -21,6 +21,7 @@ def run_inference(
     top_p: float = 0.95,
     seed: int | None = None,
     config_small: bool = False,
+    config_medium: bool = False,
     chat: bool = False,
     no_stream: bool = False,
 ) -> None:
@@ -31,13 +32,7 @@ def run_inference(
     tokenizer_path = tokenizer or model
 
     if config_small:
-        config = BitAxonConfig(
-            hidden_dim=256,
-            num_layers=4,
-            num_heads=4,
-            d_source_model=128,
-            vocab_size=1024,
-        )
+        config = BitAxonConfig.small()
         with console.status("[bold green]Initializing small model...", spinner="dots"):
             model_obj = BitAxonModel(config)
             import mlx.core as mx
@@ -45,6 +40,15 @@ def run_inference(
             mx.eval(model_obj.parameters())
         tok = _MockTokenizer()
         print_success(f"Small model ready (hidden_dim={config.hidden_dim}, layers={config.num_layers})")
+    elif config_medium:
+        from bit_axon.inference.loader import load_model
+        from bit_axon.tokenizer import QwenTokenizerWrapper
+
+        config = BitAxonConfig.medium()
+        with console.status(f"[bold green]Loading model from {model}...", spinner="dots"):
+            model_obj = load_model(Path(model), config=config, quantize=True)
+        tok = QwenTokenizerWrapper(tokenizer_path)
+        print_success(f"Medium model ready (hidden_dim={config.hidden_dim}, layers={config.num_layers})")
     else:
         from bit_axon.inference.loader import load_model
         from bit_axon.tokenizer import QwenTokenizerWrapper

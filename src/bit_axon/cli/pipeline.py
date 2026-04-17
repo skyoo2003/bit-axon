@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import mlx.core as mx
@@ -10,7 +11,7 @@ import numpy as np
 from rich.console import Console
 from rich.table import Table
 
-from bit_axon.cli._console import print_info, print_success
+from bit_axon.cli._console import print_error, print_info, print_success
 
 console = Console()
 
@@ -95,6 +96,9 @@ def pipeline_cmd(
     orpo_split: str = "train",
     orpo_limit: int | None = None,
     tokenizer: str | None = None,
+    config_small: bool = False,
+    config_medium: bool = False,
+    repo_id: str | None = None,
 ) -> None:
     """Run full ML pipeline end-to-end."""
     import gc
@@ -128,11 +132,22 @@ def pipeline_cmd(
 
     t_start = time.perf_counter()
     results: dict[str, float] = {}
+    training_metrics: list[dict] = []
+    errors: list[str] = []
+
+    def _save_partial() -> None:
+        partial = {
+            "total_time_seconds": round(time.perf_counter() - t_start, 1),
+            "metrics": {k: round(v, 6) if isinstance(v, float) else v for k, v in results.items()},
+            "errors": errors,
+        }
+        p = Path(output_dir) / "pipeline_results.json"
+        p.parent.mkdir(parents=True, exist_ok=True)
+        with open(p, "w") as f:
+            json.dump(partial, f, indent=2)
 
     # Validate dataset/tokenizer arguments
     if (sft_data or orpo_data) and tokenizer is None:
-        from bit_axon.cli._console import print_error
-
         print_error("--tokenizer is required when using real datasets (--sft-data or --orpo-data)")
         raise SystemExit(1)
 
@@ -145,7 +160,12 @@ def pipeline_cmd(
         resolved_sft = resolve_sft_data(sft_data, sft_split, sft_limit)
         if resolved_sft is None:
             raise RuntimeError("Failed to resolve SFT dataset")
-        config = BitAxonConfig(**{**_SMALL_CONFIG, "vocab_size": tok.vocab_size})
+        if config_small:
+            config = BitAxonConfig.small()
+        elif config_medium:
+            config = BitAxonConfig.medium()
+        else:
+            config = BitAxonConfig(**{**_SMALL_CONFIG, "vocab_size": tok.vocab_size})
         model = BitAxonModel(config)
         mx.eval(model.parameters())
 
@@ -170,7 +190,12 @@ def pipeline_cmd(
         sft_dataset = SFTDataset(resolved_sft, tok, max_seq_len=max_seq_len)
     else:
         print_info("Stage 1: SFT Training")
-        config = BitAxonConfig(**_SMALL_CONFIG)
+        if config_small:
+            config = BitAxonConfig.small()
+        elif config_medium:
+            config = BitAxonConfig.medium()
+        else:
+            config = BitAxonConfig(**_SMALL_CONFIG)
         model = BitAxonModel(config)
         mx.eval(model.parameters())
 
@@ -194,29 +219,35 @@ def pipeline_cmd(
         )
         sft_dataset = SimpleDataset(50, max_seq_len, config.vocab_size)
 
-    with Progress(
-        TextColumn("[bold green]{task.description}"),
-        BarColumn(),
-        TaskProgressColumn(),
-        TimeElapsedColumn(),
-        TextColumn("  loss: [yellow]{task.fields[loss]:.4f}[/]"),
-        TextColumn("  grad: [cyan]{task.fields[grad_norm]:.4f}[/]"),
-        console=console,
-    ) as progress:
-        task_id = progress.add_task("SFT Training", total=max_steps, loss=0.0, grad_norm=0.0)
-        trainer = Trainer(
-            model,
-            sft_config,
-            sft_dataset,
-            on_step=lambda s, m: progress.update(
-                task_id,
-                completed=s,
-                loss=m["loss"],
-                grad_norm=m["grad_norm"],
-            ),
-        )
-        result = trainer.train()
-    results["sft_loss"] = result["loss"]
+    try:
+        with Progress(
+            TextColumn("[bold green]{task.description}"),
+            BarColumn(),
+            TaskProgressColumn(),
+            TimeElapsedColumn(),
+            TextColumn("  loss: [yellow]{task.fields[loss]:.4f}[/]"),
+            TextColumn("  grad: [cyan]{task.fields[grad_norm]:.4f}[/]"),
+            console=console,
+        ) as progress:
+            task_id = progress.add_task("SFT Training", total=max_steps, loss=0.0, grad_norm=0.0)
+
+            def _sft_on_step(step: int, metrics: dict) -> None:
+                training_metrics.append({"step": step, **metrics})
+                progress.update(task_id, completed=step, loss=metrics["loss"], grad_norm=metrics["grad_norm"])
+
+            trainer = Trainer(
+                model,
+                sft_config,
+                sft_dataset,
+                on_step=_sft_on_step,
+            )
+            result = trainer.train()
+        results["sft_loss"] = result["loss"]
+    except Exception as e:
+        errors.append(f"Stage 1 (SFT Training): {e}")
+        print_error(f"SFT training failed: {e}")
+        _save_partial()
+        raise
 
     sft_dir.mkdir(parents=True, exist_ok=True)
     adapter_path = str(sft_dir / "adapter.safetensors")
@@ -227,29 +258,50 @@ def pipeline_cmd(
     gc.collect()
     mx.clear_cache()
 
-    print_info("Stage 2: Merge adapter into base")
-    with console.status("[bold green]Merging adapter...", spinner="dots"):
-        load_and_merge(
-            base_dir,
-            adapter_path,
-            merged_dir,
-            config=config,
-            quantize_after_merge=False,
-            lora_rank=lora_rank,
-        )
-    print_success("Merge complete")
+    try:
+        print_info("Stage 2: Merge adapter into base")
+        with console.status("[bold green]Merging adapter...", spinner="dots"):
+            load_and_merge(
+                base_dir,
+                adapter_path,
+                merged_dir,
+                config=config,
+                quantize_after_merge=False,
+                lora_rank=lora_rank,
+            )
+        print_success("Merge complete")
+    except Exception as e:
+        errors.append(f"Stage 2 (Merge): {e}")
+        print_error(f"Merge failed: {e}")
+        _save_partial()
+        raise
 
-    print_info("Stage 3: Quantize to NF4")
-    merged_model = load_model(merged_dir, config=config)
-    replace_linear_with_quantized(merged_model, group_size=64, bits=4)
-    mx.eval(merged_model.parameters())
-    with console.status("[bold green]Saving quantized model...", spinner="dots"):
-        save_merged_model(merged_model, quant_dir, config=config)
-    print_success("Quantization complete")
+    try:
+        print_info("Stage 3: Quantize to NF4")
+        merged_model = load_model(merged_dir, config=config)
+        replace_linear_with_quantized(merged_model, group_size=64, bits=4)
+        mx.eval(merged_model.parameters())
+        with console.status("[bold green]Saving quantized model...", spinner="dots"):
+            save_merged_model(merged_model, quant_dir, config=config)
+        print_success("Quantization complete")
+    except Exception as e:
+        errors.append(f"Stage 3 (Quantize): {e}")
+        print_error(f"Quantization failed: {e}")
+        _save_partial()
+        raise
 
     print_info("Stage 4: Evaluate perplexity")
-    eval_rng = np.random.RandomState(123)
-    test_tokens = mx.array(eval_rng.randint(1, config.vocab_size, size=(4, max_seq_len + 1)), dtype=mx.uint32)
+    if tok is not None:
+        from bit_axon.evaluation.dataset import WikiTextDataset
+
+        with console.status("[bold green]Loading WikiText-103 for perplexity...", spinner="dots"):
+            wt_ds = WikiTextDataset(split="test", seq_length=max_seq_len + 1, max_tokens=max_seq_len * 8, tokenizer=tok)
+            chunks = [wt_ds[i] for i in range(len(wt_ds))]
+            test_tokens = mx.stack(chunks)
+        print_info(f"Loaded {test_tokens.shape[0]} sequences ({test_tokens.shape[1]} tokens each) for perplexity evaluation")
+    else:
+        eval_rng = np.random.RandomState(123)
+        test_tokens = mx.array(eval_rng.randint(1, config.vocab_size, size=(4, max_seq_len + 1)), dtype=mx.uint32)
     with console.status("[bold green]Computing perplexity...", spinner="dots"):
         ppl, se = compute_perplexity(merged_model, test_tokens)
     results["ppl"] = ppl
@@ -376,6 +428,26 @@ def pipeline_cmd(
         )
     print_success("Final merge + quantize complete")
 
+    # Save training metrics
+    metrics_path = Path(output_dir) / "training_metrics.json"
+    if training_metrics:
+        with open(metrics_path, "w") as f:
+            json.dump(training_metrics, f, indent=2)
+        print_info(f"Training metrics saved to {metrics_path}")
+
+    # Stage 8: Upload to HuggingFace (optional)
+    if repo_id is not None and tok is not None:
+        print_info(f"Stage 8: Uploading to HuggingFace ({repo_id})")
+        from bit_axon.cli.upload import upload_cmd as _upload_cmd
+
+        bench_str = ",".join(f"{k}={v:.4f}" for k, v in results.items() if k.startswith("bench_"))
+        _upload_cmd(
+            model_path=str(final_dir),
+            repo_id=repo_id,
+            tokenizer=tokenizer,
+            benchmark_results=bench_str if bench_str else None,
+        )
+
     elapsed = time.perf_counter() - t_start
     table = Table(title="Pipeline Results")
     table.add_column("Stage", style="cyan")
@@ -402,3 +474,21 @@ def pipeline_cmd(
         for br in bench_results if tok is not None else []:
             f.write(f"Benchmark {br.benchmark_name}: {br.accuracy:.1%} ({br.correct}/{br.total})\n")
     print_success(f"Log saved to {log_path}")
+
+    results_json_path = Path(output_dir) / "pipeline_results.json"
+    pipeline_summary = {
+        "total_time_seconds": round(elapsed, 1),
+        "metrics": {k: round(v, 6) if isinstance(v, float) else v for k, v in results.items()},
+        "benchmarks": [{"name": br.benchmark_name, "accuracy": round(br.accuracy, 6), "correct": br.correct, "total": br.total} for br in bench_results],
+        "artifacts": {
+            "base_weights": str(base_dir / "weights.safetensors"),
+            "sft_adapter": adapter_path,
+            "merged_model": str(merged_dir),
+            "quantized_model": str(quant_dir),
+            "orpo_adapter": str(orpo_dir / "orpo_adapter.safetensors"),
+            "final_model": str(final_dir),
+        },
+    }
+    with open(results_json_path, "w") as f:
+        json.dump(pipeline_summary, f, indent=2)
+    print_success(f"Results saved to {results_json_path}")

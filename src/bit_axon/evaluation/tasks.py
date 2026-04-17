@@ -39,6 +39,8 @@ class BenchmarkConfig:
     max_tokens: int = 256
     temperature: float = 0.0
     seed: int | None = None
+    num_few_shot: int | None = None
+    scoring_method: str = "generate"  # "generate" or "logprob"
 
 
 # ---------------------------------------------------------------------------
@@ -141,8 +143,11 @@ class BenchmarkTask:
     """Base class for benchmark evaluation tasks."""
 
     name: str = ""
+    default_few_shot: int = 0
 
-    def load_data(self, limit: int | None = None, *, status_callback: Callable[[str], None] | None = None) -> list[BenchmarkItem]:
+    def load_data(
+        self, limit: int | None = None, *, num_few_shot: int | None = None, status_callback: Callable[[str], None] | None = None
+    ) -> list[BenchmarkItem]:
         msg = "Subclasses must implement load_data"
         raise NotImplementedError(msg)
 
@@ -158,6 +163,38 @@ class BenchmarkTask:
     def check_answer(self, predicted: str, expected: str) -> bool:
         return predicted.strip().upper() == expected.strip().upper()
 
+    def score_by_logprobs(self, model, tokenizer, item: BenchmarkItem) -> str:
+        """Score multiple-choice item by log-probability of each option.
+
+        Uses KV cache: processes prompt once, then incremental forward for each choice.
+        Returns the predicted answer letter/string.
+        """
+        import mlx.core as mx
+
+        prompt = item.prompt
+        choices = _LETTERS[:4]
+        prompt_ids = tokenizer.encode(prompt)
+        if not prompt_ids:
+            return choices[0]
+        prompt_arr = mx.array([prompt_ids], dtype=mx.uint32)
+        logits, caches = model(prompt_arr)
+
+        logprobs: list[float] = []
+        for choice in choices:
+            choice_ids = tokenizer.encode(f" {choice}")
+            if not choice_ids:
+                logprobs.append(-float("inf"))
+                continue
+            for cid in choice_ids:
+                token_arr = mx.array([[cid]], dtype=mx.uint32)
+                logits, caches = model(token_arr, cache=caches)
+            logits_f = logits.astype(mx.float32)
+            last_logits = logits_f[0, -1, :]
+            log_probs = mx.log_softmax(last_logits)
+            logprobs.append(float(log_probs[0]))
+        best_idx = int(max(range(len(logprobs)), key=lambda i: logprobs[i]))
+        return choices[best_idx]
+
 
 # ---------------------------------------------------------------------------
 # MMLU
@@ -168,6 +205,7 @@ class MMLUTask(BenchmarkTask):
     """MMLU: Massive Multitask Language Understanding (57 subjects, 5-shot)."""
 
     name = "mmlu"
+    default_few_shot = 5
 
     def __init__(self) -> None:
         self._few_shot_cache: dict[str, list[dict[str, Any]]] = {}
@@ -188,9 +226,12 @@ class MMLUTask(BenchmarkTask):
             lines.append(f"Answer: {answer_letter}")
         return "\n".join(lines)
 
-    def load_data(self, limit: int | None = None, *, status_callback: Callable[[str], None] | None = None) -> list[BenchmarkItem]:
+    def load_data(
+        self, limit: int | None = None, *, num_few_shot: int | None = None, status_callback: Callable[[str], None] | None = None
+    ) -> list[BenchmarkItem]:
         datasets = _require_datasets()
         items: list[BenchmarkItem] = []
+        n_shot = num_few_shot if num_few_shot is not None else self.default_few_shot
         for i, subject in enumerate(_MMLU_SUBJECTS):
             if limit is not None and len(items) >= limit:
                 if status_callback is not None:
@@ -201,7 +242,7 @@ class MMLUTask(BenchmarkTask):
             test_ds = _load_with_retry(datasets.load_dataset, "cais/mmlu", subject, split="test")
             dev_ds = _load_with_retry(datasets.load_dataset, "cais/mmlu", subject, split="dev")
             dev_rows = [dev_ds[i] for i in range(len(dev_ds))]
-            few_shot = self._get_few_shot(subject, dev_rows)
+            few_shot = self._get_few_shot(subject, dev_rows, n=n_shot)
             for idx in range(len(test_ds)):
                 row = test_ds[idx]
                 answer_letter = _LETTERS[row["answer"]]
@@ -229,6 +270,7 @@ class GSM8KTask(BenchmarkTask):
     """GSM8K: Grade School Math 8K (8-shot chain-of-thought)."""
 
     name = "gsm8k"
+    default_few_shot = 8
 
     def __init__(self) -> None:
         self._few_shot: list[dict[str, Any]] | None = None
@@ -240,14 +282,17 @@ class GSM8KTask(BenchmarkTask):
             self._few_shot = rng.sample(train_data, n_avail)
         return self._few_shot
 
-    def load_data(self, limit: int | None = None, *, status_callback: Callable[[str], None] | None = None) -> list[BenchmarkItem]:
+    def load_data(
+        self, limit: int | None = None, *, num_few_shot: int | None = None, status_callback: Callable[[str], None] | None = None
+    ) -> list[BenchmarkItem]:
         datasets = _require_datasets()
         if status_callback is not None:
             status_callback(f"Loading {self.name}...")
         test_ds = _load_with_retry(datasets.load_dataset, "openai/gsm8k", "main", split="test")
         train_ds = _load_with_retry(datasets.load_dataset, "openai/gsm8k", "main", split="train")
         train_rows = [train_ds[i] for i in range(len(train_ds))]
-        few_shot = self._get_few_shot(train_rows)
+        n_shot = num_few_shot if num_few_shot is not None else self.default_few_shot
+        few_shot = self._get_few_shot(train_rows, n=n_shot)
 
         items: list[BenchmarkItem] = []
         for idx in range(len(test_ds)):
@@ -301,6 +346,7 @@ class _ARCTask(BenchmarkTask):
 
     name = ""
     _config: str = ""
+    default_few_shot = 25
 
     def __init__(self) -> None:
         self._few_shot: list[dict[str, Any]] | None = None
@@ -321,14 +367,17 @@ class _ARCTask(BenchmarkTask):
             lines.append(f"Answer: {answer_key}")
         return "\n".join(lines)
 
-    def load_data(self, limit: int | None = None, *, status_callback: Callable[[str], None] | None = None) -> list[BenchmarkItem]:
+    def load_data(
+        self, limit: int | None = None, *, num_few_shot: int | None = None, status_callback: Callable[[str], None] | None = None
+    ) -> list[BenchmarkItem]:
         datasets = _require_datasets()
         if status_callback is not None:
             status_callback(f"Loading {self.name}...")
         test_ds = _load_with_retry(datasets.load_dataset, "allenai/ai2_arc", self._config, split="test")
         train_ds = _load_with_retry(datasets.load_dataset, "allenai/ai2_arc", self._config, split="train")
         train_rows = [train_ds[i] for i in range(len(train_ds))]
-        few_shot = self._get_few_shot(train_rows)
+        n_shot = num_few_shot if num_few_shot is not None else self.default_few_shot
+        few_shot = self._get_few_shot(train_rows, n=n_shot)
 
         items: list[BenchmarkItem] = []
         for idx in range(len(test_ds)):
@@ -384,7 +433,9 @@ class HellaSwagTask(BenchmarkTask):
 
     name = "hellaswag"
 
-    def load_data(self, limit: int | None = None, *, status_callback: Callable[[str], None] | None = None) -> list[BenchmarkItem]:
+    def load_data(
+        self, limit: int | None = None, *, num_few_shot: int | None = None, status_callback: Callable[[str], None] | None = None
+    ) -> list[BenchmarkItem]:
         datasets = _require_datasets()
         if status_callback is not None:
             status_callback(f"Loading {self.name}...")
@@ -425,7 +476,9 @@ class WinoGrandeTask(BenchmarkTask):
 
     name = "winogrande"
 
-    def load_data(self, limit: int | None = None, *, status_callback: Callable[[str], None] | None = None) -> list[BenchmarkItem]:
+    def load_data(
+        self, limit: int | None = None, *, num_few_shot: int | None = None, status_callback: Callable[[str], None] | None = None
+    ) -> list[BenchmarkItem]:
         datasets = _require_datasets()
         if status_callback is not None:
             status_callback(f"Loading {self.name}...")
@@ -454,6 +507,31 @@ class WinoGrandeTask(BenchmarkTask):
 
     def check_answer(self, predicted: str, expected: str) -> bool:
         return predicted.strip() == expected.strip()
+
+    def score_by_logprobs(self, model, tokenizer, item: BenchmarkItem) -> str:
+        import mlx.core as mx
+
+        prompt = item.prompt
+        prompt_ids = tokenizer.encode(prompt)
+        if not prompt_ids:
+            return "1"
+        prompt_arr = mx.array([prompt_ids], dtype=mx.uint32)
+        logits, caches = model(prompt_arr)
+
+        logprobs: list[float] = []
+        for choice in ("1", "2"):
+            choice_ids = tokenizer.encode(f" {choice}")
+            if not choice_ids:
+                logprobs.append(-float("inf"))
+                continue
+            for cid in choice_ids:
+                token_arr = mx.array([[cid]], dtype=mx.uint32)
+                logits, caches = model(token_arr, cache=caches)
+            logits_f = logits.astype(mx.float32)
+            last_logits = logits_f[0, -1, :]
+            log_probs = mx.log_softmax(last_logits)
+            logprobs.append(float(log_probs[0]))
+        return "1" if logprobs[0] >= logprobs[1] else "2"
 
 
 # ---------------------------------------------------------------------------

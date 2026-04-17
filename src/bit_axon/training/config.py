@@ -50,6 +50,7 @@ class TrainingConfig:
     # Data
     batch_size: int = 1
     max_seq_len: int = 512
+    eos_token_id: int = 0
 
     # Checkpointing
     save_every: int = 500
@@ -65,3 +66,12 @@ class TrainingConfig:
 
     # Misc
     seed: int = 42
+    low_memory: bool = False
+
+    @classmethod
+    def low_memory_preset(cls) -> TrainingConfig:
+        return cls(batch_size=1, max_seq_len=256, grad_accum_steps=8, lora_rank=4, low_memory=True)
+
+    @classmethod
+    def fast_dev(cls) -> TrainingConfig:
+        return cls(max_steps=100, eval_every=50, save_every=10000)

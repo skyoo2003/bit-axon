@@ -43,6 +43,7 @@ def run(
     top_p: Annotated[float, typer.Option("--top-p", help="Nucleus sampling threshold")] = 0.95,
     seed: Annotated[int | None, typer.Option("--seed", help="Random seed")] = None,
     config_small: Annotated[bool, typer.Option("--config-small", help="Use small model for testing")] = False,
+    config_medium: Annotated[bool, typer.Option("--config-medium", help="Use medium config (~1.5B params)")] = False,
     chat: Annotated[bool, typer.Option("--chat", "-c", help="Interactive chat mode")] = False,
     no_stream: Annotated[bool, typer.Option("--no-stream", help="Disable streaming output")] = False,
 ) -> None:
@@ -59,6 +60,7 @@ def run(
         top_p=top_p,
         seed=seed,
         config_small=config_small,
+        config_medium=config_medium,
         chat=chat,
         no_stream=no_stream,
     )
@@ -71,6 +73,7 @@ def train(
     val_data: Annotated[str | None, typer.Option("--val-data", help="Path to validation JSONL file")] = None,
     tokenizer: Annotated[str, typer.Option("--tokenizer", "-t", help="Tokenizer name or path")] = "Qwen/Qwen2.5-3B",
     config_small: Annotated[bool, typer.Option("--config-small", help="Use small config for testing")] = False,
+    config_medium: Annotated[bool, typer.Option("--config-medium", help="Use medium config (~1.5B params)")] = False,
     lora_rank: Annotated[int, typer.Option("--lora-rank", help="LoRA adapter rank")] = 8,
     lora_dropout: Annotated[float, typer.Option("--lora-dropout", help="LoRA dropout")] = 0.0,
     lora_scale: Annotated[float, typer.Option("--lora-scale", help="LoRA scale")] = 20.0,
@@ -90,6 +93,7 @@ def train(
     save_every: Annotated[int, typer.Option("--save-every", help="Save checkpoint every N steps")] = 500,
     eval_every: Annotated[int, typer.Option("--eval-every", help="Evaluate every N steps")] = 500,
     resume: Annotated[bool, typer.Option("--resume", help="Resume from latest checkpoint")] = False,
+    low_memory: Annotated[bool, typer.Option("--low-memory", help="Use memory-efficient trainer (mx.grad)")] = False,
 ) -> None:
     """Fine-tune with SFT (thermal-aware QLoRA)."""
     from bit_axon.cli.train import train_cmd
@@ -100,6 +104,7 @@ def train(
         tokenizer=tokenizer,
         model_weights=model_weights,
         config_small=config_small,
+        config_medium=config_medium,
         lora_rank=lora_rank,
         lora_dropout=lora_dropout,
         lora_scale=lora_scale,
@@ -119,6 +124,7 @@ def train(
         save_every=save_every,
         eval_every=eval_every,
         resume=resume,
+        low_memory=low_memory,
     )
 
 
@@ -129,11 +135,12 @@ def quantize(
     bits: Annotated[int, typer.Option("--bits", "-b", help="Quantization bit-width")] = 4,
     group_size: Annotated[int, typer.Option("--group-size", "-g", help="Quantization group size")] = 64,
     config_small: Annotated[bool, typer.Option("--config-small", help="Use small model for testing")] = False,
+    config_medium: Annotated[bool, typer.Option("--config-medium", help="Use medium config (~1.5B params)")] = False,
 ) -> None:
     """Quantize model weights to lower bit-width."""
     from bit_axon.cli.quantize import quantize_cmd
 
-    quantize_cmd(model_path, output, bits, group_size, config_small)
+    quantize_cmd(model_path, output, bits, group_size, config_small or config_medium)
 
 
 @app.command()
@@ -159,11 +166,12 @@ def benchmark(
     warmup: Annotated[int, typer.Option("--warmup", "-w", help="Warmup iterations")] = 2,
     iterations: Annotated[int, typer.Option("--iterations", "-i", help="Timed iterations")] = 5,
     config_small: Annotated[bool, typer.Option("--config-small", help="Use small config for testing")] = False,
+    config_medium: Annotated[bool, typer.Option("--config-medium", help="Use medium config (~1.5B params)")] = False,
 ) -> None:
     """Benchmark model performance across sequence lengths."""
     from bit_axon.cli.benchmark import benchmark_cmd
 
-    benchmark_cmd(seq_lengths, batch_size, warmup, iterations, config_small)
+    benchmark_cmd(seq_lengths, batch_size, warmup, iterations, config_small or config_medium)
 
 
 @app.command()
@@ -182,6 +190,7 @@ def download(
 def evaluate(
     model_path: Annotated[str, typer.Argument(help="Path to model weights")],
     config_small: Annotated[bool, typer.Option("--config-small", help="Use small model for testing")] = False,
+    config_medium: Annotated[bool, typer.Option("--config-medium", help="Use medium config (~1.5B params)")] = False,
     max_tokens: Annotated[int, typer.Option("--max-tokens", help="Max tokens to evaluate")] = 100_000,
     seq_length: Annotated[int, typer.Option("--seq-length", help="Sequence length for evaluation")] = 2048,
     tokenizer: Annotated[str | None, typer.Option("--tokenizer", "-t", help="Tokenizer path or HF repo ID")] = None,
@@ -194,6 +203,10 @@ def evaluate(
         int | None,
         typer.Option("--benchmark-limit", help="Max samples per benchmark"),
     ] = None,
+    scoring_method: Annotated[
+        str,
+        typer.Option("--scoring-method", help="Scoring method: generate (free-form) or logprob (log-probability)"),
+    ] = "generate",
 ) -> None:
     """Evaluate model perplexity on WikiText-103."""
     if benchmarks is not None and tokenizer is None:
@@ -215,22 +228,25 @@ def evaluate(
             benchmarks=benchmark_names,
             benchmark_limit=benchmark_limit,
             max_tokens=max_tokens,
+            scoring_method=scoring_method,
+            config_medium=config_medium,
         )
     else:
         from bit_axon.cli.evaluate import evaluate_cmd
 
-        evaluate_cmd(model_path, config_small, max_tokens, seq_length, tokenizer, batch_size)
+        evaluate_cmd(model_path, config_small, max_tokens, seq_length, tokenizer, batch_size, config_medium=config_medium)
 
 
 @app.command(name="port-weights")
 def port_weights(
     output: Annotated[str, typer.Argument(help="Output directory for ported weights")],
     config_small: Annotated[bool, typer.Option("--config-small", help="Use small config with mock weights")] = False,
+    config_medium: Annotated[bool, typer.Option("--config-medium", help="Use medium config (~1.5B params)")] = False,
 ) -> None:
     """Port Qwen2.5-3B weights to Bit-Axon model format."""
     from bit_axon.cli.port_weights import port_weights_cmd
 
-    port_weights_cmd(output, config_small)
+    port_weights_cmd(output, config_small, config_medium)
 
 
 @app.command()
@@ -252,6 +268,9 @@ def pipeline(
     orpo_split: Annotated[str, typer.Option("--orpo-split", help="ORPO dataset split")] = "train",
     orpo_limit: Annotated[int | None, typer.Option("--orpo-limit", help="Max ORPO rows to load")] = None,
     tokenizer: Annotated[str | None, typer.Option("--tokenizer", "-t", help="Tokenizer name or path (required when using real datasets)")] = None,
+    config_small: Annotated[bool, typer.Option("--config-small", help="Use small config for testing")] = False,
+    config_medium: Annotated[bool, typer.Option("--config-medium", help="Use medium config (~1.5B params)")] = False,
+    repo_id: Annotated[str | None, typer.Option("--repo-id", "-r", help="HuggingFace repo ID for upload (e.g. user/bit-axon-sft)")] = None,
 ) -> None:
     """Run full ML pipeline: SFT, merge, quantize, evaluate, ORPO (supports real datasets)."""
     from bit_axon.cli.pipeline import pipeline_cmd
@@ -270,6 +289,9 @@ def pipeline(
         orpo_split=orpo_split,
         orpo_limit=orpo_limit,
         tokenizer=tokenizer,
+        config_small=config_small,
+        config_medium=config_medium,
+        repo_id=repo_id,
     )
 
 
@@ -285,6 +307,31 @@ def prepare(
     from bit_axon.cli.prepare import prepare_cmd
 
     prepare_cmd(dataset, format, output, split, limit)
+
+
+@app.command()
+def upload(
+    model_path: Annotated[str, typer.Argument(help="Path to model directory")],
+    repo_id: Annotated[str, typer.Option("--repo-id", "-r", help="HuggingFace repository ID")] = "skyoo2003/bit-axon",
+    tokenizer: Annotated[str, typer.Option("--tokenizer", "-t", help="Tokenizer name or path")] = "Qwen/Qwen2.5-3B",
+    private: Annotated[bool, typer.Option("--private", help="Create private repository")] = False,
+    commit_message: Annotated[str, typer.Option("--commit-message", "-m", help="Commit message")] = "Upload Bit-Axon 3.2B model",
+    benchmark_results: Annotated[
+        str | None,
+        typer.Option("--benchmark-results", help="Comma-separated benchmark results, e.g. mmlu=0.45,gsm8k=0.32"),
+    ] = None,
+) -> None:
+    """Upload model to HuggingFace Hub."""
+    from bit_axon.cli.upload import upload_cmd
+
+    upload_cmd(
+        model_path=model_path,
+        repo_id=repo_id,
+        tokenizer=tokenizer,
+        private=private,
+        commit_message=commit_message,
+        benchmark_results=benchmark_results,
+    )
 
 
 def main() -> None:

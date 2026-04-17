@@ -36,6 +36,7 @@ class QwenTokenizerWrapper:
             raise FileNotFoundError(msg)
 
         self._vocab = self._tokenizer.get_vocab(with_added_tokens=True)
+        self._path_or_name = str(path_or_name)
 
     def encode(self, text: str) -> list[int]:
         """Encode text to list of token IDs."""

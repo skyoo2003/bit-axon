@@ -13,7 +13,7 @@ from bit_axon.cli._console import print_error, print_info, print_success
 console = Console()
 
 
-def port_weights_cmd(output: str, config_small: bool) -> None:
+def port_weights_cmd(output: str, config_small: bool, config_medium: bool = False) -> None:
     """Port Qwen2.5-3B weights to Bit-Axon model format."""
     from bit_axon.config import BitAxonConfig
     from bit_axon.porting.pipeline import initialize_from_qwen_weights, save_ported_model
@@ -73,7 +73,7 @@ def port_weights_cmd(output: str, config_small: bool) -> None:
         with console.status("[bold green]Building vocab mapping (152K -> 32K)..."):
             from bit_axon.porting.vocab_map import build_vocab_mapping
 
-            vocab_mapping = build_vocab_mapping(config.vocab_size)
+            vocab_mapping = build_vocab_mapping(target_size=config.vocab_size)
         print_success(f"Vocab mapping: {len(vocab_mapping)} tokens")
 
         with console.status("[bold green]Initializing Bit-Axon model from Qwen weights..."):

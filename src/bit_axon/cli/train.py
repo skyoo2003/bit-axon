@@ -12,6 +12,21 @@ from bit_axon.cli._console import print_info, print_success
 console = Console()
 
 
+def _load_vocab_mapping(safetensors_path: str) -> dict[int, int] | None:
+    """Load vocab mapping from safetensors file metadata."""
+    try:
+        from safetensors import safe_open
+
+        f = safe_open(safetensors_path, framework="mlx")
+        meta = f.metadata() or {}
+        raw = meta.get("vocab_mapping")
+        if raw is None:
+            return None
+        return eval(raw)
+    except Exception:
+        return None
+
+
 def train_cmd(
     *,
     data: str,
@@ -19,6 +34,7 @@ def train_cmd(
     tokenizer: str,
     model_weights: str,
     config_small: bool,
+    config_medium: bool = False,
     lora_rank: int,
     lora_dropout: float,
     lora_scale: float,
@@ -38,16 +54,14 @@ def train_cmd(
     save_every: int,
     eval_every: int,
     resume: bool,
+    low_memory: bool = False,
 ) -> None:
     """Run the 10-step SFT training pipeline."""
     from pathlib import Path
 
     from bit_axon.config import BitAxonConfig
     from bit_axon.model import BitAxonModel
-    from bit_axon.quantization.nf4 import (
-        replace_linear_with_quantized,
-        replace_switch_linear_with_quantized,
-    )
+    from bit_axon.quantization.nf4 import replace_linear_with_quantized
     from bit_axon.tokenizer import QwenTokenizerWrapper
     from bit_axon.training.checkpoint import save_adapter_only
     from bit_axon.training.config import TrainingConfig
@@ -59,13 +73,9 @@ def train_cmd(
     # 1. Build config
     with console.status("[bold green]Building model config..."):
         if config_small:
-            config = BitAxonConfig(
-                hidden_dim=256,
-                num_layers=4,
-                num_heads=4,
-                d_source_model=128,
-                vocab_size=1024,
-            )
+            config = BitAxonConfig.small()
+        elif config_medium:
+            config = BitAxonConfig.medium()
         else:
             config = BitAxonConfig()
 
@@ -88,11 +98,13 @@ def train_cmd(
         temp_pause=temp_pause,
         temp_stop=temp_stop,
         seed=seed,
+        low_memory=low_memory,
     )
 
     # 3. Load model
     console.print(f"Loading model (hidden_dim={config.hidden_dim}, layers={config.num_layers})...")
     model = BitAxonModel(config)
+    vocab_mapping: dict[int, int] | None = None
     if not config_small:
         import mlx.core as mx
         from mlx.utils import tree_unflatten
@@ -105,10 +117,15 @@ def train_cmd(
             console.print(f"Downloading weights from {model_weights}...")
             weights_path = Path(snapshot_download(model_weights))
 
-        # Load safetensors weights from directory
+        # Load safetensors weights from directory or file
         weights: dict[str, mx.array] = {}
-        for sf_file in sorted(weights_path.glob("*.safetensors")):
-            weights.update(mx.load(str(sf_file)))
+        if weights_path.is_file():
+            weights.update(mx.load(str(weights_path)))
+            vocab_mapping = _load_vocab_mapping(str(weights_path))
+        else:
+            for sf_file in sorted(weights_path.glob("*.safetensors")):
+                weights.update(mx.load(str(sf_file)))
+            vocab_mapping = _load_vocab_mapping(str(sorted(weights_path.glob("*.safetensors"))[0]))
         if weights:
             model.update(tree_unflatten(list(weights.items())))
         mx.eval(model.parameters())
@@ -117,17 +134,12 @@ def train_cmd(
         import mlx.core as mx
 
         mx.eval(model.parameters())
+        vocab_mapping = {i: i for i in range(config.vocab_size)}
         print_info("Using random weights (config-small mode)")
 
-    # 4. Quantize to Q4
+    # 4. Quantize to Q4 (regular Linear only — SwitchLinear/MoE kept in fp16)
     with console.status("[bold green]Quantizing to Q4..."):
         replace_linear_with_quantized(
-            model,
-            group_size=training_config.quantize_group_size,
-            bits=training_config.quantize_bits,
-        )
-        # Also quantize SwitchLinear (MoE expert) weights to NF4
-        replace_switch_linear_with_quantized(
             model,
             group_size=training_config.quantize_group_size,
             bits=training_config.quantize_bits,
@@ -144,8 +156,8 @@ def train_cmd(
     mx.eval(model.parameters())
     print_info("Embedding cast to float16")
 
-    # 5. Freeze all, apply LoRA/DoRA
-    adapter_type = "DoRA" if training_config.use_dora else "LoRA"
+    # 5. Freeze all, apply LoRA (DoRA incompatible with NF4 quantized base weights)
+    adapter_type = "LoRA"
     with console.status(f"[bold green]Applying {adapter_type} (rank={training_config.lora_rank})..."):
         wrapped = apply_lora_to_model(
             model,
@@ -153,7 +165,7 @@ def train_cmd(
             dropout=training_config.lora_dropout,
             scale=training_config.lora_scale,
             targets=training_config.lora_targets,
-            use_dora=training_config.use_dora,
+            use_dora=False,
         )
     mx.eval(model.parameters())
     mx.clear_cache()
@@ -163,17 +175,17 @@ def train_cmd(
     # Freeze everything, then unfreeze only adapter params so nn.value_and_grad
     # doesn't retain activations for the entire 4B+ param model during backprop.
     model.freeze()
-    model.apply_to_modules(lambda k, m: m.unfreeze(keys=["lora_a", "lora_b", "m"]) if type(m).__name__ in ("DoRALinear", "LoRALinear") else None)
+    model.apply_to_modules(lambda k, m: m.unfreeze(keys=["lora_a", "lora_b"]) if type(m).__name__ == "LoRALinear" else None)
 
     # 6. Load datasets
     console.print(f"Loading tokenizer: {tokenizer}")
     tok = QwenTokenizerWrapper(tokenizer)
     console.print(f"Loading training data: {data}")
-    train_dataset = SFTDataset(data, tok, max_seq_len=training_config.max_seq_len)
+    train_dataset = SFTDataset(data, tok, max_seq_len=training_config.max_seq_len, vocab_mapping=vocab_mapping)
     val_dataset = None
     if val_data:
         console.print(f"Loading validation data: {val_data}")
-        val_dataset = SFTDataset(val_data, tok, max_seq_len=training_config.max_seq_len)
+        val_dataset = SFTDataset(val_data, tok, max_seq_len=training_config.max_seq_len, vocab_mapping=vocab_mapping)
 
     # 7. Setup cooling scheduler
     cooling = None

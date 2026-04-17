@@ -13,6 +13,7 @@ def build_lr_schedule(
     warmup_steps: int,
     total_steps: int,
     min_lr: float = 0.0,
+    initial_step: int = 0,
 ) -> Callable[[int], mx.array]:
     """Build cosine decay schedule with linear warmup.
 
@@ -21,6 +22,7 @@ def build_lr_schedule(
         warmup_steps: Number of linear warmup steps (0 to skip warmup).
         total_steps: Total training steps.
         min_lr: Minimum learning rate at end of cosine decay.
+        initial_step: Starting step for resume (schedule is offset by this).
 
     Returns:
         Schedule function: step_index -> learning_rate (mx.array).
@@ -29,7 +31,22 @@ def build_lr_schedule(
         warmup = linear_schedule(0.0, learning_rate, warmup_steps)
         decay_steps = max(total_steps - warmup_steps, 1)
         cosine = cosine_decay(learning_rate, decay_steps, end=min_lr)
-        return join_schedules([warmup, cosine], [warmup_steps + 1])
+        schedule = join_schedules([warmup, cosine], [warmup_steps + 1])
+
+        if initial_step > 0:
+
+            def _offset_schedule(step: int) -> mx.array:
+                return schedule(step + initial_step)
+
+            return _offset_schedule
+        return schedule
     else:
         decay_steps = max(total_steps, 1)
-        return cosine_decay(learning_rate, decay_steps, end=min_lr)
+        cosine = cosine_decay(learning_rate, decay_steps, end=min_lr)
+        if initial_step > 0:
+
+            def _offset_schedule(step: int) -> mx.array:
+                return cosine(step + initial_step)
+
+            return _offset_schedule
+        return cosine

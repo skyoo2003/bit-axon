@@ -52,9 +52,11 @@ class _BaseJSONLDataset:
         data: list[dict] | str | Path,
         tokenizer: QwenTokenizerWrapper,
         max_seq_len: int = 2048,
+        vocab_mapping: dict[int, int] | None = None,
     ) -> None:
         self._tokenizer = tokenizer
         self._max_seq_len = max_seq_len
+        self._vocab_mapping = vocab_mapping
         if isinstance(data, (str, Path)):
             self._file_path = str(Path(data).resolve())
             self._offsets = _build_line_offsets(self._file_path)
@@ -79,6 +81,12 @@ class _BaseJSONLDataset:
         if self._data is None:
             raise RuntimeError("No in-memory data available")
         return self._data[idx]
+
+    def _remap_token_ids(self, token_ids: list[int]) -> list[int]:
+        mapping = self._vocab_mapping
+        if mapping is None:
+            return token_ids
+        return [mapping.get(tid, 0) for tid in token_ids]
 
 
 class SFTDataset(_BaseJSONLDataset):
@@ -110,8 +118,9 @@ class SFTDataset(_BaseJSONLDataset):
         tokenizer: QwenTokenizerWrapper,
         max_seq_len: int = 2048,
         mask_prompt: bool = True,
+        vocab_mapping: dict[int, int] | None = None,
     ) -> None:
-        super().__init__(data, tokenizer, max_seq_len)
+        super().__init__(data, tokenizer, max_seq_len, vocab_mapping=vocab_mapping)
         self._mask_prompt = mask_prompt
 
     def _get_messages(self, raw: dict[str, object]) -> list[dict[str, str]]:
@@ -141,6 +150,9 @@ class SFTDataset(_BaseJSONLDataset):
             token_ids.append(self._tokenizer.eos_token_id)
 
         token_ids = token_ids[: self._max_seq_len]
+
+        if self._vocab_mapping is not None:
+            token_ids = self._remap_token_ids(token_ids)
 
         loss_mask = self._compute_loss_mask(token_ids, messages)
 
@@ -197,6 +209,10 @@ class AlpacaDataset(SFTDataset):
             token_ids.append(self._tokenizer.eos_token_id)
 
         token_ids = token_ids[: self._max_seq_len]
+
+        if self._vocab_mapping is not None:
+            token_ids = self._remap_token_ids(token_ids)
+
         loss_mask = self._compute_loss_mask(token_ids, messages)
 
         return token_ids, loss_mask
@@ -240,6 +256,10 @@ class ORPODataset(_BaseJSONLDataset):
 
         chosen_ids = chosen_ids[: self._max_seq_len]
         rejected_ids = rejected_ids[: self._max_seq_len]
+
+        if self._vocab_mapping is not None:
+            chosen_ids = self._remap_token_ids(chosen_ids)
+            rejected_ids = self._remap_token_ids(rejected_ids)
 
         chosen_mask = self._build_mask(chosen_ids, prompt_len)
         rejected_mask = self._build_mask(rejected_ids, prompt_len)

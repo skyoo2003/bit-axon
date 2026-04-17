@@ -13,6 +13,35 @@ from mlx.utils import tree_flatten, tree_unflatten
 from bit_axon.training.dora import DoRALinear
 from bit_axon.training.lora import LoRALinear, apply_lora_to_model
 
+_HF_TOKENIZER_META_FILES = [
+    "tokenizer_config.json",
+    "special_tokens_map.json",
+    "generation_config.json",
+]
+
+
+def _copy_tokenizer_meta(tokenizer: object, tokenizer_dir: Path) -> None:
+    """Copy tokenizer metadata files from HuggingFace Hub when available."""
+    source_path = getattr(tokenizer, "_path_or_name", None)
+    if source_path is None:
+        return
+    try:
+        import shutil
+
+        from huggingface_hub import hf_hub_download
+
+        source_str = str(source_path)
+        if "/" not in source_str:
+            return
+        for fname in _HF_TOKENIZER_META_FILES:
+            try:
+                local = hf_hub_download(repo_id=source_str, filename=fname)
+                shutil.copy2(local, tokenizer_dir / fname)
+            except Exception:
+                pass
+    except ImportError:
+        pass
+
 
 def merge_adapters(model: nn.Module) -> nn.Module:
     """Walk the model tree and fuse all LoRA/DoRA adapters into base weights.
@@ -151,6 +180,7 @@ def save_merged_model(
             tokenizer.save_pretrained(str(tokenizer_dir))
         elif hasattr(tokenizer, "tokenizer") and hasattr(tokenizer.tokenizer, "save"):
             tokenizer.tokenizer.save(str(tokenizer_dir / "tokenizer.json"))
+            _copy_tokenizer_meta(tokenizer, tokenizer_dir)
 
     return output_dir
 

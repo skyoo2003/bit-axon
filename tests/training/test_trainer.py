@@ -187,7 +187,7 @@ class TestTrainer:
         trainer = Trainer(model, config, dataset)
         trainer.setup()
         assert trainer.optimizer is not None
-        assert trainer._loss_and_grad is not None
+        assert trainer.step_count == 0
 
     def test_single_step_completes(self, small_config, tmp_path):
         """A single training step should complete without errors."""

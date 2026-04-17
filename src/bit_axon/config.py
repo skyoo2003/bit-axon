@@ -43,9 +43,45 @@ class BitAxonConfig:
     @property
     def head_dim(self) -> int:
         """SWA head dimension (hidden_dim / num_heads)."""
+        if self.hidden_dim % self.num_heads != 0:
+            raise ValueError(f"hidden_dim ({self.hidden_dim}) must be divisible by num_heads ({self.num_heads})")
         return self.hidden_dim // self.num_heads
 
     @property
     def ssm_intermediate_dim(self) -> int:
         """SSM expanded dimension (hidden_dim * ssm_expand)."""
         return self.hidden_dim * self.ssm_expand
+
+    @classmethod
+    def small(cls) -> BitAxonConfig:
+        return cls(
+            hidden_dim=256,
+            num_layers=4,
+            num_heads=4,
+            d_source_model=128,
+            vocab_size=1024,
+            ssm_d_state=4,
+            ssm_d_conv=2,
+            ssm_expand=2,
+            swa_window_size=64,
+            moe_num_experts=4,
+            moe_top_k=2,
+            moe_intermediate_dim=512,
+        )
+
+    @classmethod
+    def medium(cls) -> BitAxonConfig:
+        return cls(
+            hidden_dim=2048,
+            num_layers=12,
+            num_heads=16,
+            d_source_model=1536,
+            vocab_size=32000,
+            ssm_d_state=12,
+            ssm_d_conv=4,
+            ssm_expand=3,
+            swa_window_size=4096,
+            moe_num_experts=6,
+            moe_top_k=2,
+            moe_intermediate_dim=3072,
+        )
