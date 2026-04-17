@@ -1,0 +1,14 @@
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Generated files
+*.safetensors binary
+*.gguf binary
+*.ggml binary
+
+# Documentation
+docs/*.md linguist-documentation
+*.ipynb linguist-documentation
+
+# Lock files
+uv.lock linguist-generated

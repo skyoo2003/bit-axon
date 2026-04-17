@@ -1,0 +1,39 @@
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+version-template: "$MAJOR.$MINOR.$PATCH"
+version-resolver:
+  major:
+    labels:
+      - "breaking-change"
+  minor:
+    labels:
+      - "enhancement"
+      - "feature"
+  default: patch
+
+categories:
+  - title: "Breaking Changes"
+    labels:
+      - "breaking-change"
+  - title: "New Features"
+    labels:
+      - "enhancement"
+  - title: "Bug Fixes"
+    labels:
+      - "bug"
+  - title: "Documentation"
+    labels:
+      - "documentation"
+  - title: "Dependencies"
+    labels:
+      - "dependencies"
+      - "github-actions"
+  - title: "Other Changes"
+    labels:
+      - "*"
+
+change-template: "- $TITLE (#$NUMBER) by @$AUTHOR"
+template: |
+  ## Changes
+
+  $CHANGES
