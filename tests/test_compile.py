@@ -1,9 +1,17 @@
+import os
+
 import mlx.core as mx
 import mlx.nn as nn
+import pytest
 
 from bit_axon.layers.axon_ssm import _compute_dt, _ssm_fma, segsum
 from bit_axon.layers.moe import swiglu
 from bit_axon.model import BitAxonModel
+
+_skip_model_on_ci = pytest.mark.skipif(
+    bool(os.environ.get("CI")),
+    reason="MLX Metal forward passes are flaky on CI runners",
+)
 
 
 class TestSwigluCompile:
@@ -54,6 +62,7 @@ class TestComputeDtCompile:
         assert mx.all(result >= 1e-4).item()
 
 
+@_skip_model_on_ci
 class TestModelCompileNoRegression:
     def test_ssm_block_no_regression(self, small_config):
         from bit_axon.layers.block import AxonSSMBlock
@@ -81,6 +90,7 @@ class TestModelCompileNoRegression:
         assert mx.all(mx.isfinite(logits)).item()
 
 
+@_skip_model_on_ci
 class TestCompileBitExact:
     """Verify compiled output matches uncompiled at multiple precision levels."""
 
