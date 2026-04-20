@@ -5,8 +5,8 @@ from bit_axon.porting.weight_map import build_key_mappings, enumerate_target_key
 def test_enumerate_target_keys_count(small_config: BitAxonConfig):
     keys = enumerate_target_keys(small_config)
     # small_config: 4 layers (1 SSM + 1 SWA+MoE + 2 SSM+MoE), weight_tying=True
-    # Top: 4, Layer 0 (SSM): 10, Layer 1 (SWA+MoE): 14, Layer 2 (SSM+MoE): 19, Layer 3 (SSM+MoE): 19
-    assert len(keys) == 66
+    # Top: 4, Layer 0 (SSM): 14, Layer 1 (SWA+MoE): 14, Layer 2 (SSM+MoE): 23, Layer 3 (SSM+MoE): 23
+    assert len(keys) == 78
 
 
 def test_enumerate_target_keys_no_duplicates(small_config: BitAxonConfig):

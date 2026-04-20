@@ -30,6 +30,11 @@ class GenerateConfig:
     top_p: float = 0.95
     repetition_penalty: float = 1.0
     seed: int | None = None
+    # Optional list of substrings that, if they appear in the decoded
+    # output, halt generation (sync path only). Used by the benchmark
+    # harness to stop GSM8K on few-shot delimiters like "\n\nQ:" and keep
+    # greedy extraction from scooping up a hallucinated next question.
+    stop_strings: list[str] | None = None
 
 
 @dataclass
@@ -142,16 +147,31 @@ def _generate_tokens(model, logits, caches, cfg, eos_id) -> Generator[int, None,
 def _generate_sync(model, tokenizer, logits, caches, cfg, prompt_tokens, t_start, ttft_ms) -> GenerateResult:
     eos_id = tokenizer.eos_token_id
     generated_ids: list[int] = []
+    stop_strings = cfg.stop_strings or []
 
+    _decode_buf_every = 16
     for tok_id in _generate_tokens(model, logits, caches, cfg, eos_id):
         generated_ids.append(tok_id)
+        if stop_strings and len(generated_ids) % _decode_buf_every == 0:
+            partial = tokenizer.decode(generated_ids, skip_special_tokens=True)
+            if any(s in partial for s in stop_strings):
+                break
 
     mx.synchronize()
     elapsed = time.perf_counter() - t_start
     completion_tokens = len(generated_ids)
+    text = tokenizer.decode(generated_ids, skip_special_tokens=True) if generated_ids else ""
+    if stop_strings and text:
+        earliest = len(text)
+        for s in stop_strings:
+            idx = text.find(s)
+            if idx != -1 and idx < earliest:
+                earliest = idx
+        if earliest < len(text):
+            text = text[:earliest]
 
     return GenerateResult(
-        text=tokenizer.decode(generated_ids, skip_special_tokens=True) if generated_ids else "",
+        text=text,
         token_ids=generated_ids,
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,

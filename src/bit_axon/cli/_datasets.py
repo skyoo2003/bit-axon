@@ -32,7 +32,7 @@ SFT_PRESETS: dict[str, dict[str, str]] = {
 }
 
 ORPO_PRESETS: dict[str, dict[str, str]] = {
-    "ultrafeedback": {"hf_id": "HuggingFaceH4/ultrafeedback_binarized_cleaned", "split": "train_prefs", "format": "ultrafeedback"},
+    "ultrafeedback": {"hf_id": "HuggingFaceH4/ultrafeedback_binarized", "split": "train_prefs", "format": "ultrafeedback"},
     "hh-rlhf": {"hf_id": "Anthropic/hh-rlhf", "split": "train", "format": "hh-rlhf"},
 }
 

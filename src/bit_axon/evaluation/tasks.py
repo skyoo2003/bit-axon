@@ -156,9 +156,13 @@ class BenchmarkTask:
         raise NotImplementedError(msg)
 
     def extract_answer(self, response: str) -> str:
-        first_line = response.strip().split("\n")[0].strip()
-        m = re.match(r"^[A-D]", first_line)
-        return m.group(0) if m else ""
+        # Base models rarely emit a bare choice letter at column 0; they tend
+        # to prefix with "Answer:", "The answer is ", " A.", "(A)" etc. Scan
+        # the full response for the first standalone A/B/C/D instead of the
+        # stricter "^[A-D]" on the first line, which produced sub-random
+        # accuracy on MMLU/ARC baselines.
+        m = re.search(r"\b([A-D])\b", response)
+        return m.group(1) if m else ""
 
     def check_answer(self, predicted: str, expected: str) -> bool:
         return predicted.strip().upper() == expected.strip().upper()
@@ -317,6 +321,12 @@ class GSM8KTask(BenchmarkTask):
         return item.prompt
 
     def extract_answer(self, response: str) -> str:
+        # Stage 0: canonical GSM8K format "#### <num>". The few-shot
+        # exemplars all end with this sentinel, so a properly-primed base
+        # model emits it too. Preferred over any fallback.
+        m0 = re.search(r"####\s*(-?[0-9][0-9,]*(?:\.[0-9]+)?)", response)
+        if m0:
+            return m0.group(1).replace(",", "")
         # Stage 1: "The answer is X"
         m = re.search(r"The answer is (-?[0-9]+(?:,[0-9]+)*(?:\.[0-9]+)?)", response)
         if m:

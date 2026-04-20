@@ -62,7 +62,18 @@ def evaluate_benchmark(
         items = task.load_data(limit=config.limit, num_few_shot=config.num_few_shot)
 
     max_tokens = _TASK_MAX_TOKENS.get(benchmark_name, config.max_tokens)
-    gen_config = GenerateConfig(max_tokens=max_tokens, temperature=0.0, top_k=0, top_p=1.0)
+    # GSM8K few-shot exemplars use "Q:" / "A:" delimiters. Without a stop
+    # sequence the model continues past its own answer and hallucinates a
+    # follow-up "Q: ...", whose number the extractor then grabs — producing
+    # near-zero accuracy on any base model. Halt on the delimiter instead.
+    stop_strings = ["\n\nQ:", "\nQ:"] if benchmark_name == "gsm8k" else None
+    gen_config = GenerateConfig(
+        max_tokens=max_tokens,
+        temperature=0.0,
+        top_k=0,
+        top_p=1.0,
+        stop_strings=stop_strings,
+    )
     use_logprob = config.scoring_method == "logprob" and benchmark_name != "gsm8k"
 
     correct = 0
@@ -81,6 +92,11 @@ def evaluate_benchmark(
         return task.extract_answer(result.text)
 
     if console is not None:
+        # Newline-safe periodic progress cadence: report ~10 times per
+        # benchmark so background logs capture per-item progress — rich's
+        # \r-based bar renders only on a live terminal.
+        total = len(items)
+        report_every = max(1, total // 10)
         with Progress(
             TextColumn("[bold green]{task.description}"),
             BarColumn(),
@@ -89,7 +105,7 @@ def evaluate_benchmark(
             TextColumn("  [cyan]{task.fields[acc]:.1%}[/]"),
             console=console,
         ) as progress:
-            task_id = progress.add_task(benchmark_name, total=len(items), acc=0.0)
+            task_id = progress.add_task(benchmark_name, total=total, acc=0.0)
             for i, item in enumerate(items):
                 try:
                     predicted = _evaluate_item(item)
@@ -105,6 +121,12 @@ def evaluate_benchmark(
                     if is_correct:
                         category_correct[item.category] = category_correct.get(item.category, 0) + 1
                 progress.update(task_id, completed=i + 1, acc=correct / (i + 1))
+                done = i + 1
+                if done % report_every == 0 or done == total:
+                    print(
+                        f"  {benchmark_name} {done}/{total}  acc={correct / done:.1%}  failed={failed}",
+                        flush=True,
+                    )
     else:
         for item in items:
             try:

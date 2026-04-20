@@ -62,9 +62,21 @@ class SlidingWindowAttention(nn.Module):
         k = k.reshape(B, L, self.num_heads, self.head_dim).transpose(0, 2, 1, 3)
         v = v.reshape(B, L, self.num_heads, self.head_dim).transpose(0, 2, 1, 3)
 
-        kv_len_before = cache.k.shape[2] if cache is not None and cache.k is not None else 0
-        if cache is not None:
+        # Split prefill and decode paths. On prefill (L > 1) we seed the
+        # cache with the fresh K/V for future decode steps, but run
+        # attention on the *un-trimmed* K/V from this pass — otherwise the
+        # cache's window_size truncation produces kv_len < seq_len, which
+        # makes the causal mask's early rows fully -inf and softmax NaN.
+        # On decode (L == 1) we use the cached K/V (window of recent past)
+        # concatenated with the new token.
+        if cache is not None and L > 1:
+            cache.update_and_fetch(k, v)  # side-effect only; ignore return
+            kv_len_before = 0
+        elif cache is not None:
+            kv_len_before = cache.k.shape[2] if cache.k is not None else 0
             k, v = cache.update_and_fetch(k, v)
+        else:
+            kv_len_before = 0
 
         kv_len = k.shape[2]
         q_base_offset = kv_len_before

@@ -97,10 +97,19 @@ class BitAxonModel(nn.Module):
         x = self.embed_tokens(input_ids)
         x = self.input_proj(x)
 
+        # When no cache is supplied (prefill path) we still need KVCache
+        # instances for the SWA layers so their K/V are persisted for
+        # subsequent incremental-decode calls. Without this, prefill runs
+        # SWA with cache=None, the layer holds no KVCache, and the very
+        # next decode call starts from an empty context — prefill and
+        # step-by-step decode diverge at the model level (~O(1) diff).
+        if cache is None:
+            cache = self._create_caches()
+
         new_caches = []
         for i in range(self.config.num_layers):
             layer = getattr(self, f"layer_{i}")
-            layer_cache = cache[i] if cache is not None else None
+            layer_cache = cache[i]
             x, layer_cache_out = layer(x, cache=layer_cache)
             new_caches.append(layer_cache_out)
 

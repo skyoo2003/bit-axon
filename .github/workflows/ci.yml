@@ -60,3 +60,4 @@ jobs:
           TERM: dumb
           NO_COLOR: "1"
           TQDM_DISABLE: "1"
+          CI: "true"

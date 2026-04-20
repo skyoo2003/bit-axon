@@ -4,10 +4,35 @@ import mlx.core as mx
 import mlx.nn as nn
 
 from bit_axon.config import BitAxonConfig
-from bit_axon.layers.axon_ssm import AxonSSM
+from bit_axon.layers.mamba3 import Mamba3
 from bit_axon.layers.moe import SharedExpertMoE
 from bit_axon.layers.rms_norm import RMSNorm
 from bit_axon.layers.swa import SlidingWindowAttention
+
+
+def _build_mamba3(config: BitAxonConfig) -> Mamba3:
+    """Construct a Mamba-3 block from the BitAxonConfig's mamba3_* fields.
+
+    Centralized so both AxonSSMBlock and AxonSSMMoEBlock share one
+    parameter-mapping and we only need to touch this function if we add
+    more config knobs.
+    """
+    return Mamba3(
+        d_model=config.hidden_dim,
+        d_state=config.mamba3_d_state,
+        expand=config.mamba3_expand,
+        headdim=config.mamba3_headdim,
+        ngroups=config.mamba3_ngroups,
+        rope_fraction=config.mamba3_rope_fraction,
+        dt_min=config.mamba3_dt_min,
+        dt_max=config.mamba3_dt_max,
+        dt_init_floor=config.mamba3_dt_init_floor,
+        a_floor=config.mamba3_a_floor,
+        d_conv=config.mamba3_d_conv,
+        chunk_size=config.mamba3_chunk_size,
+        is_mimo=config.mamba3_is_mimo,
+        mimo_rank=config.mamba3_mimo_rank,
+    )
 
 
 class AxonSSMBlock(nn.Module):
@@ -21,7 +46,7 @@ class AxonSSMBlock(nn.Module):
         """
         super().__init__()
         self.input_norm = RMSNorm(config.hidden_dim, config.rms_norm_eps)
-        self.ssm = AxonSSM(config)
+        self.ssm = _build_mamba3(config)
 
     def __call__(self, x: mx.array, cache: list | None = None) -> tuple[mx.array, list | None]:
         """Forward pass with residual connection.
@@ -90,7 +115,7 @@ class AxonSSMMoEBlock(nn.Module):
         """
         super().__init__()
         self.input_norm = RMSNorm(config.hidden_dim, config.rms_norm_eps)
-        self.ssm = AxonSSM(config)
+        self.ssm = _build_mamba3(config)
         self.post_ssm_norm = RMSNorm(config.hidden_dim, config.rms_norm_eps)
         self.moe = SharedExpertMoE(
             config.hidden_dim,

@@ -5,24 +5,24 @@ from __future__ import annotations
 import mlx.core as mx
 import pytest
 
-from bit_axon.config import BitAxonConfig
 from bit_axon.inference.generate import GenerateConfig, GenerateResult, generate
-from bit_axon.model import BitAxonModel
 
-SMALL_CONFIG = BitAxonConfig(
-    hidden_dim=256,
-    num_layers=4,
-    num_heads=4,
-    d_source_model=128,
-    vocab_size=1024,
-    ssm_d_state=4,
-    ssm_d_conv=2,
-    ssm_expand=2,
-    swa_window_size=64,
-    moe_num_experts=4,
-    moe_top_k=2,
-    moe_intermediate_dim=512,
-)
+
+class FakeModel:
+    """Lightweight model stand-in that returns deterministic logits.
+
+    Avoids Metal GPU computation so generate tests are CI-safe.
+    Only tests generation logic: sampling, stop strings, metrics, chat template.
+    """
+
+    def __init__(self, vocab_size: int = 1024):
+        self._vocab_size = vocab_size
+
+    def __call__(self, input_ids, cache=None):
+        B, T = input_ids.shape
+        logits = mx.zeros((B, T, self._vocab_size))
+        logits[:, :, 1] = 1.0
+        return logits, None
 
 
 class MockTokenizer:
@@ -60,14 +60,12 @@ class MockTokenizer:
 
 @pytest.fixture
 def model():
-    m = BitAxonModel(SMALL_CONFIG)
-    mx.eval(m.parameters())
-    return m
+    return FakeModel(vocab_size=1024)
 
 
 @pytest.fixture
 def tokenizer():
-    return MockTokenizer(vocab_size=SMALL_CONFIG.vocab_size)
+    return MockTokenizer(vocab_size=1024)
 
 
 class TestGenerateConfig:
