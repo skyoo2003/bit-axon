@@ -55,14 +55,14 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Run unit tests
-        run: pytest tests/ -v --ignore=tests/inference/test_generate.py
+        run: pytest tests/ -v --ignore=tests/inference/test_generate.py --ignore=tests/test_compile.py
         env:
           TERM: dumb
           NO_COLOR: "1"
           TQDM_DISABLE: "1"
 
-      - name: Run MLX inference tests
-        run: pytest tests/inference/test_generate.py -v
+      - name: Run MLX model tests
+        run: pytest tests/inference/test_generate.py tests/test_compile.py -v
         env:
           TERM: dumb
           NO_COLOR: "1"
