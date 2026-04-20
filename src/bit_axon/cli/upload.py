@@ -257,7 +257,7 @@ def stage_upload_dir(
     # Copy LICENSE / NOTICE from the repo root so the HF repo carries the
     # same legal files the project ships with, not just the license field
     # declared in the model card frontmatter.
-    repo_root = Path(__file__).resolve().parents[3]
+    repo_root = Path(__file__).resolve().parents[4]
     for fname in ("LICENSE", "NOTICE"):
         src = repo_root / fname
         if src.exists():
@@ -269,7 +269,7 @@ def stage_upload_dir(
         bench_dict = {}
         for pair in benchmark_results.split(","):
             if "=" not in pair:
-                continue
+                raise ValueError(f"Malformed benchmark result entry: {pair!r}. Expected format 'name=score', e.g. 'mmlu=0.45'.")
             name, acc = pair.strip().split("=")
             bench_dict[name.strip()] = float(acc.strip())
         print_info(f"Benchmark results: {bench_dict}")
