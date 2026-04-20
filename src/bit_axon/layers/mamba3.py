@@ -95,16 +95,8 @@ def _scalar_decay_scan(
     if init_state is None:
         init_state = mx.zeros((B, H, N), dtype=v.dtype)
 
-    if chunk_size >= T:
-        h = init_state
-        outs: list[mx.array] = []
-        for t in range(T):
-            alpha_t = mx.exp(a_dt[:, t, :, None])
-            h = alpha_t * h + v[:, t, :, :]
-            outs.append(h)
-        return mx.stack(outs, axis=1), h
-
     n_chunks = (T + chunk_size - 1) // chunk_size
+    chunk_size = min(chunk_size, T)
     outs_chunks: list[mx.array] = []
     h = init_state
     for ci in range(n_chunks):

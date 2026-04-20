@@ -149,13 +149,10 @@ def _generate_sync(model, tokenizer, logits, caches, cfg, prompt_tokens, t_start
     generated_ids: list[int] = []
     stop_strings = cfg.stop_strings or []
 
+    _decode_buf_every = 16
     for tok_id in _generate_tokens(model, logits, caches, cfg, eos_id):
         generated_ids.append(tok_id)
-        if stop_strings:
-            # Decoding every token is O(n²) in the worst case but
-            # completions here are capped (≤512), and the benchmark
-            # wall-time win from early-stopping dominates. If this
-            # becomes a bottleneck, buffer and decode every K tokens.
+        if stop_strings and len(generated_ids) % _decode_buf_every == 0:
             partial = tokenizer.decode(generated_ids, skip_special_tokens=True)
             if any(s in partial for s in stop_strings):
                 break

@@ -15,6 +15,16 @@ from bit_axon.cli._console import print_error, print_info, print_success
 
 console = Console()
 
+
+def _find_repo_root() -> Path:
+    """Walk up from this file until finding pyproject.toml or .git."""
+    p = Path(__file__).resolve().parent
+    for ancestor in [p, *p.parents]:
+        if (ancestor / "pyproject.toml").exists() or (ancestor / ".git").exists():
+            return ancestor
+    return p.parents[4]
+
+
 _MODEL_CARD_TEMPLATE = """\
 ---
 language:
@@ -254,10 +264,18 @@ def stage_upload_dir(
     except Exception as e:
         print_info(f"Tokenizer download skipped: {e}")
 
+    if not (upload_dir / "tokenizer.json").exists():
+        print_error(
+            "tokenizer.json not found in upload dir. The staged repo will "
+            "be unusable without it. Either pass a valid --tokenizer or "
+            "place tokenizer.json in the model directory."
+        )
+        raise SystemExit(1)
+
     # Copy LICENSE / NOTICE from the repo root so the HF repo carries the
     # same legal files the project ships with, not just the license field
     # declared in the model card frontmatter.
-    repo_root = Path(__file__).resolve().parents[4]
+    repo_root = _find_repo_root()
     for fname in ("LICENSE", "NOTICE"):
         src = repo_root / fname
         if src.exists():
