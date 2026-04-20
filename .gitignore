@@ -1,3 +1,7 @@
+# Heavy training artifacts and third-party reference code — never commit.
+pipeline_output/
+reference_impl/
+
 # Python
 __pycache__/
 *.py[cod]

@@ -40,6 +40,25 @@ class BitAxonConfig:
     max_seq_len: int = 65_536  # max 64K context
     rms_norm_eps: float = 1e-6
 
+    # Mamba-3 block parameters (arXiv:2603.15569).
+    # Consumed by bit_axon.layers.mamba3.Mamba3 (replaces AxonSSM once
+    # task #16 lands). Invariants: (mamba3_expand * hidden_dim) must be
+    # divisible by mamba3_headdim; (mamba3_d_state * mamba3_rope_fraction)
+    # must be even.
+    mamba3_d_state: int = 128
+    mamba3_headdim: int = 64
+    mamba3_expand: int = 2
+    mamba3_ngroups: int = 1
+    mamba3_rope_fraction: float = 0.5
+    mamba3_chunk_size: int = 64
+    mamba3_d_conv: int = 4
+    mamba3_dt_min: float = 0.001
+    mamba3_dt_max: float = 0.1
+    mamba3_dt_init_floor: float = 1e-4
+    mamba3_a_floor: float = 1e-4
+    mamba3_is_mimo: bool = False
+    mamba3_mimo_rank: int = 4
+
     @property
     def head_dim(self) -> int:
         """SWA head dimension (hidden_dim / num_heads)."""
@@ -54,6 +73,8 @@ class BitAxonConfig:
 
     @classmethod
     def small(cls) -> BitAxonConfig:
+        # d_inner = mamba3_expand * hidden_dim = 2 * 256 = 512; headdim=32 →
+        # nheads=16. d_state*rope_fraction = 32*0.5 = 16 (even).
         return cls(
             hidden_dim=256,
             num_layers=4,
@@ -67,6 +88,8 @@ class BitAxonConfig:
             moe_num_experts=4,
             moe_top_k=2,
             moe_intermediate_dim=512,
+            mamba3_d_state=32,
+            mamba3_headdim=32,
         )
 
     @classmethod
@@ -85,3 +108,8 @@ class BitAxonConfig:
             moe_top_k=2,
             moe_intermediate_dim=3072,
         )
+
+    @classmethod
+    def large(cls) -> BitAxonConfig:
+        """Full-size Bit-Axon 3.2B config (production default)."""
+        return cls()

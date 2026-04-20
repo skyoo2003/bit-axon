@@ -98,7 +98,11 @@ def pipeline_cmd(
     tokenizer: str | None = None,
     config_small: bool = False,
     config_medium: bool = False,
+    config_large: bool = False,
     repo_id: str | None = None,
+    benchmark_limit: int | None = 100,
+    benchmark_max_tokens: int = 256,
+    benchmarks_enabled: bool = True,
 ) -> None:
     """Run full ML pipeline end-to-end."""
     import gc
@@ -110,7 +114,6 @@ def pipeline_cmd(
     from bit_axon.cli._datasets import resolve_orpo_data, resolve_sft_data
     from bit_axon.config import BitAxonConfig
     from bit_axon.evaluation.perplexity import compute_perplexity
-    from bit_axon.inference.loader import load_model
     from bit_axon.inference.sampling import sample_logits
     from bit_axon.model import BitAxonModel
     from bit_axon.quantization.nf4 import replace_linear_with_quantized
@@ -164,15 +167,44 @@ def pipeline_cmd(
             config = BitAxonConfig.small()
         elif config_medium:
             config = BitAxonConfig.medium()
+        elif config_large:
+            config = BitAxonConfig.large()
         else:
             config = BitAxonConfig(**{**_SMALL_CONFIG, "vocab_size": tok.vocab_size})
+        # Preset vocab_size (small=1024, medium/large=32000) is smaller than
+        # real tokenizers (Qwen ~151k). Without this override, token ids
+        # beyond the preset vocab cause out-of-bounds embedding reads and
+        # produce NaN on the very first forward pass.
+        if config.vocab_size < tok.vocab_size:
+            config.vocab_size = tok.vocab_size
         model = BitAxonModel(config)
         mx.eval(model.parameters())
+
+        # Port Qwen2.5-3B's pre-trained embedding (and LM head via weight
+        # tying) into the freshly-initialized model. This collapses the
+        # "every token is predicted uniformly" regime that causes
+        # perplexity ≈ exp(log(vocab_size)) on out-of-domain text.
+        #
+        # Skip the port when d_source_model is far below Qwen's 2048 — the
+        # required truncation (e.g. 128 for the small preset keeps only
+        # 6.25% of each embedding vector) destroys enough structure that
+        # the resulting initialization is *less* stable than random. We've
+        # observed SFT NaN even with std-rescaling at d_source=128.
+        if config.d_source_model >= 512:
+            try:
+                from bit_axon.porting.qwen_embedding import apply_qwen_embedding_init
+
+                apply_qwen_embedding_init(model, tokenizer_id=tokenizer, verbose=True)
+                mx.eval(model.parameters())
+            except Exception as e:
+                print_info(f"Qwen embedding port skipped: {e}")
+        else:
+            print_info(f"Qwen embedding port skipped: d_source_model={config.d_source_model} < 512 (truncation too aggressive)")
 
         base_dir.mkdir(parents=True, exist_ok=True)
         mx.save_safetensors(str(base_dir / "weights.safetensors"), dict(tree_flatten(model.parameters())))
 
-        apply_lora_to_model(model, rank=lora_rank, dropout=0.0, scale=20.0)
+        apply_lora_to_model(model, rank=lora_rank, dropout=0.0, scale=8.0)
         mx.eval(model.parameters())
 
         sft_config = TrainingConfig(
@@ -180,9 +212,9 @@ def pipeline_cmd(
             grad_accum_steps=1,
             batch_size=batch_size,
             max_seq_len=max_seq_len,
-            learning_rate=1e-3,
+            learning_rate=1e-4,
             lora_rank=lora_rank,
-            lora_scale=20.0,
+            lora_scale=8.0,
             use_dora=False,
             save_every=10000,
             output_dir=str(sft_dir),
@@ -194,6 +226,8 @@ def pipeline_cmd(
             config = BitAxonConfig.small()
         elif config_medium:
             config = BitAxonConfig.medium()
+        elif config_large:
+            config = BitAxonConfig.large()
         else:
             config = BitAxonConfig(**_SMALL_CONFIG)
         model = BitAxonModel(config)
@@ -202,7 +236,7 @@ def pipeline_cmd(
         base_dir.mkdir(parents=True, exist_ok=True)
         mx.save_safetensors(str(base_dir / "weights.safetensors"), dict(tree_flatten(model.parameters())))
 
-        apply_lora_to_model(model, rank=lora_rank, dropout=0.0, scale=20.0)
+        apply_lora_to_model(model, rank=lora_rank, dropout=0.0, scale=8.0)
         mx.eval(model.parameters())
 
         sft_config = TrainingConfig(
@@ -210,9 +244,9 @@ def pipeline_cmd(
             grad_accum_steps=1,
             batch_size=batch_size,
             max_seq_len=max_seq_len,
-            learning_rate=1e-3,
+            learning_rate=1e-4,
             lora_rank=lora_rank,
-            lora_scale=20.0,
+            lora_scale=8.0,
             use_dora=False,
             save_every=10000,
             output_dir=str(sft_dir),
@@ -234,6 +268,17 @@ def pipeline_cmd(
             def _sft_on_step(step: int, metrics: dict) -> None:
                 training_metrics.append({"step": step, **metrics})
                 progress.update(task_id, completed=step, loss=metrics["loss"], grad_norm=metrics["grad_norm"])
+                # Emit a newline status every 50 steps (and at the final
+                # step) so background logs capture progress. Use the
+                # builtin print with flush=True — rich's Console buffers
+                # independently of PYTHONUNBUFFERED, so its output would
+                # not reach the nohup-redirected file until the block
+                # exits.
+                if step % 50 == 0 or step == max_steps:
+                    print(
+                        f"  SFT step {step}/{max_steps}  loss={metrics['loss']:.4f}  grad={metrics['grad_norm']:.4f}",
+                        flush=True,
+                    )
 
             trainer = Trainer(
                 model,
@@ -254,43 +299,36 @@ def pipeline_cmd(
     save_adapter_only(model, adapter_path)
     print_success(f"SFT: step={result['step']}, loss={result['loss']:.4f}")
 
-    del model, trainer
-    gc.collect()
-    mx.clear_cache()
-
+    # Stage 2: fuse LoRA into the live trained model and persist the FULL
+    # parameter tree (embed_tokens, lm_head via weight_tying, norms, biases,
+    # and Mamba-3 B_bias/C_bias). The previous implementation used
+    # ``load_and_merge`` which reloaded base weights (random init) and only
+    # overlaid LoRA ``lora_a/lora_b`` — silently discarding every non-LoRA
+    # update from training. That produced PPL ≈ exp(log(vocab)) on out-of-
+    # domain text because the merged embedding stayed random.
     try:
-        print_info("Stage 2: Merge adapter into base")
-        with console.status("[bold green]Merging adapter...", spinner="dots"):
-            load_and_merge(
-                base_dir,
-                adapter_path,
-                merged_dir,
-                config=config,
-                quantize_after_merge=False,
-                lora_rank=lora_rank,
-            )
-        print_success("Merge complete")
+        print_info("Stage 2: Fuse adapter into trained model")
+        from bit_axon.training.merging import merge_adapters as _merge_adapters
+
+        with console.status("[bold green]Fusing LoRA into model...", spinner="dots"):
+            _merge_adapters(model)
+            save_merged_model(model, merged_dir, config=config)
+        print_success("Merge complete (full trained parameters preserved)")
     except Exception as e:
         errors.append(f"Stage 2 (Merge): {e}")
         print_error(f"Merge failed: {e}")
         _save_partial()
         raise
 
-    try:
-        print_info("Stage 3: Quantize to NF4")
-        merged_model = load_model(merged_dir, config=config)
-        replace_linear_with_quantized(merged_model, group_size=64, bits=4)
-        mx.eval(merged_model.parameters())
-        with console.status("[bold green]Saving quantized model...", spinner="dots"):
-            save_merged_model(merged_model, quant_dir, config=config)
-        print_success("Quantization complete")
-    except Exception as e:
-        errors.append(f"Stage 3 (Quantize): {e}")
-        print_error(f"Quantization failed: {e}")
-        _save_partial()
-        raise
+    trained_model = model
+    del trainer
+    gc.collect()
+    mx.clear_cache()
 
-    print_info("Stage 4: Evaluate perplexity")
+    # Stage 3: perplexity on the pre-quantize merged model. Measuring PPL on
+    # the NF4-quantized model conflates "is the model learning" with "is NF4
+    # a good compression"; we separate them by running PPL before quantize.
+    print_info("Stage 3: Evaluate perplexity (pre-quantize)")
     if tok is not None:
         from bit_axon.evaluation.dataset import WikiTextDataset
 
@@ -303,25 +341,25 @@ def pipeline_cmd(
         eval_rng = np.random.RandomState(123)
         test_tokens = mx.array(eval_rng.randint(1, config.vocab_size, size=(4, max_seq_len + 1)), dtype=mx.uint32)
     with console.status("[bold green]Computing perplexity...", spinner="dots"):
-        ppl, se = compute_perplexity(merged_model, test_tokens)
+        ppl, se = compute_perplexity(trained_model, test_tokens)
     results["ppl"] = ppl
     print_success(f"Perplexity: {ppl:.2f} +/- {se:.2f}")
 
     bench_results = []
-    if tok is not None:
-        print_info("Stage 4b: Benchmark evaluation")
+    if tok is not None and benchmarks_enabled:
+        print_info("Stage 4: Benchmark evaluation (pre-quantize)")
         from bit_axon.evaluation.benchmark import evaluate_benchmarks
         from bit_axon.evaluation.tasks import BenchmarkConfig
 
-        bench_config = BenchmarkConfig(limit=100, max_tokens=256)
-        bench_results = evaluate_benchmarks(merged_model, tok, config=bench_config, console=console)
+        bench_config = BenchmarkConfig(limit=benchmark_limit, max_tokens=benchmark_max_tokens)
+        bench_results = evaluate_benchmarks(trained_model, tok, config=bench_config, console=console)
         for br in bench_results:
             results[f"bench_{br.benchmark_name}"] = br.accuracy
         print_success(f"Benchmarks: {', '.join(f'{r.benchmark_name}={r.accuracy:.1%}' for r in bench_results)}")
 
-    print_info("Stage 5: Autoregressive inference")
+    print_info("Stage 5: Autoregressive inference (pre-quantize)")
     prompt_ids = mx.array([[1, 42, 100, 200, 500]], dtype=mx.uint32)
-    logits, caches = merged_model(prompt_ids)
+    logits, caches = trained_model(prompt_ids)
 
     gen_tokens = 20
     with Progress(
@@ -335,7 +373,7 @@ def pipeline_cmd(
         t_gen = time.perf_counter()
         for i in range(gen_tokens):
             next_token = sample_logits(logits[:, -1, :], temperature=0.8, top_k=50, top_p=0.95)
-            logits, caches = merged_model(mx.array([[int(next_token.item())]], dtype=mx.uint32), cache=caches)
+            logits, caches = trained_model(mx.array([[int(next_token.item())]], dtype=mx.uint32), cache=caches)
             elapsed = time.perf_counter() - t_gen
             progress.update(task_id, completed=i + 1, speed=(i + 1) / max(elapsed, 1e-9))
         mx.synchronize()
@@ -343,14 +381,30 @@ def pipeline_cmd(
     results["tok_s"] = tok_s
     print_success(f"Inference: {tok_s:.1f} tok/s")
 
-    del merged_model
+    # Quantize AFTER the evaluation stages so metrics reflect the trained
+    # model, not the NF4-compressed version. The NF4 artifact is still
+    # produced for downstream deployment; it just is not what we evaluate.
+    try:
+        print_info("Stage 5b: Quantize to NF4 (for deployment artifact)")
+        replace_linear_with_quantized(trained_model, group_size=64, bits=4)
+        mx.eval(trained_model.parameters())
+        with console.status("[bold green]Saving quantized model...", spinner="dots"):
+            save_merged_model(trained_model, quant_dir, config=config)
+        print_success("Quantization complete")
+    except Exception as e:
+        errors.append(f"Stage 5b (Quantize): {e}")
+        print_error(f"Quantization failed: {e}")
+        _save_partial()
+        raise
+
+    del trained_model
     gc.collect()
     mx.clear_cache()
 
     print_info("Stage 6: ORPO preference alignment")
     orpo_model = BitAxonModel(config)
     mx.eval(orpo_model.parameters())
-    apply_lora_to_model(orpo_model, rank=lora_rank, dropout=0.0, scale=20.0)
+    apply_lora_to_model(orpo_model, rank=lora_rank, dropout=0.0, scale=8.0)
     mx.eval(orpo_model.parameters())
 
     orpo_wrapper = LogitsOnlyModel(orpo_model)
@@ -361,9 +415,9 @@ def pipeline_cmd(
         grad_accum_steps=1,
         batch_size=batch_size,
         max_seq_len=max_seq_len,
-        learning_rate=1e-3,
+        learning_rate=1e-4,
         lora_rank=lora_rank,
-        lora_scale=20.0,
+        lora_scale=8.0,
         use_dora=False,
         beta=0.1,
         training_mode="orpo",
@@ -391,16 +445,25 @@ def pipeline_cmd(
         console=console,
     ) as progress:
         task_id = progress.add_task("ORPO Training", total=orpo_steps, loss=0.0, margin=0.0)
-        orpo_trainer = ORPOTrainer(
-            orpo_wrapper,
-            orpo_config,
-            orpo_dataset,
-            on_step=lambda s, m: progress.update(
+
+        def _orpo_on_step(s: int, m: dict) -> None:
+            progress.update(
                 task_id,
                 completed=s,
                 loss=m["loss"],
                 margin=m.get("reward_margin", 0.0),
-            ),
+            )
+            if s % 50 == 0 or s == orpo_steps:
+                print(
+                    f"  ORPO step {s}/{orpo_steps}  loss={m['loss']:.4f}  margin={m.get('reward_margin', 0.0):.4f}",
+                    flush=True,
+                )
+
+        orpo_trainer = ORPOTrainer(
+            orpo_wrapper,
+            orpo_config,
+            orpo_dataset,
+            on_step=_orpo_on_step,
         )
         orpo_result = orpo_trainer.train()
     results["orpo_loss"] = orpo_result["loss"]

@@ -30,6 +30,12 @@ def compute_perplexity(
     losses = nn.losses.cross_entropy(logits_flat, targets_flat, reduction="none")
 
     mean_loss = mx.mean(losses).item()
+    # Guard against overflow in math.exp when a diverged / random-init model
+    # produces a mean loss beyond float64's exp range (~709). Callers (e.g.
+    # the pipeline) should treat inf as "model is unusable for PPL" but
+    # continue downstream stages.
+    if not math.isfinite(mean_loss) or mean_loss > 700.0:
+        return float("inf"), float("inf")
     ppl = math.exp(mean_loss)
 
     n_tokens = losses.size

@@ -116,7 +116,7 @@ def _generate_model_card(
     swa_window = d.get("swa_window_size", 4096)
 
     total_params = _estimate_params(d)
-    param_count = f"{total_params / 1e9:.1f}B"
+    param_count = _format_param_count(total_params)
 
     ssm_end = n_layers // 3 - 1
     swa_start = n_layers // 3
@@ -151,6 +151,20 @@ def _generate_model_card(
         tokenizer=tokenizer,
         benchmark_section=benchmark_section,
     )
+
+
+def _format_param_count(total_params: int) -> str:
+    """Render a parameter count as a short human string.
+
+    <1M → "{N}K", <1B → "{N}M", otherwise "{N}B". The default "{X:.1f}B"
+    collapses small configs (e.g. 5M params) to "0.0B" which is misleading
+    on model cards for the small/medium presets.
+    """
+    if total_params < 1_000_000:
+        return f"{total_params / 1_000:.0f}K"
+    if total_params < 1_000_000_000:
+        return f"{total_params / 1_000_000:.0f}M"
+    return f"{total_params / 1_000_000_000:.1f}B"
 
 
 def _estimate_params(config_dict: dict) -> int:
@@ -191,15 +205,18 @@ def _download_tokenizer_files(tokenizer_id: str, target_dir: Path) -> None:
             print_info(f"Skipped {fname} (not found in {tokenizer_id})")
 
 
-def upload_cmd(
+def stage_upload_dir(
     model_path: str,
     repo_id: str,
     tokenizer: str = "Qwen/Qwen2.5-3B",
-    private: bool = False,
-    commit_message: str = "Upload Bit-Axon 3.2B model",
     benchmark_results: str | None = None,
-) -> None:
-    """Upload model to HuggingFace Hub."""
+    upload_dir_name: str = "_hf_upload",
+) -> Path:
+    """Stage a HuggingFace-ready upload directory without pushing.
+
+    Copies weights, config, tokenizer files, and renders a model card into
+    ``<model_path>/<upload_dir_name>/``. Returns the staged path.
+    """
     from bit_axon.config import BitAxonConfig
 
     model_dir = Path(model_path)
@@ -207,7 +224,7 @@ def upload_cmd(
         print_error(f"Model directory not found: {model_path}")
         raise SystemExit(1)
 
-    print_info(f"Preparing upload to {repo_id}...")
+    print_info(f"Staging upload folder for {repo_id}...")
 
     config_path = model_dir / "config.json"
     if config_path.exists():
@@ -218,7 +235,7 @@ def upload_cmd(
         config = BitAxonConfig()
         print_info("Using default BitAxonConfig")
 
-    upload_dir = model_dir / "_hf_upload"
+    upload_dir = model_dir / upload_dir_name
     upload_dir.mkdir(parents=True, exist_ok=True)
 
     for sf in model_dir.glob("*.safetensors"):
@@ -232,23 +249,52 @@ def upload_cmd(
             json.dump(asdict(config), f, indent=2, default=str)
 
     print_info(f"Downloading tokenizer files from {tokenizer}...")
-    _download_tokenizer_files(tokenizer, upload_dir)
+    try:
+        _download_tokenizer_files(tokenizer, upload_dir)
+    except Exception as e:
+        print_info(f"Tokenizer download skipped: {e}")
 
-    if not (upload_dir / "tokenizer.json").exists():
-        print_error("tokenizer.json not found in upload directory. Upload aborted.")
-        raise SystemExit(1)
+    # Copy LICENSE / NOTICE from the repo root so the HF repo carries the
+    # same legal files the project ships with, not just the license field
+    # declared in the model card frontmatter.
+    repo_root = Path(__file__).resolve().parents[3]
+    for fname in ("LICENSE", "NOTICE"):
+        src = repo_root / fname
+        if src.exists():
+            shutil.copy2(src, upload_dir / fname)
+            print_info(f"Copied {fname}")
 
     bench_dict: dict[str, float] | None = None
     if benchmark_results is not None:
         bench_dict = {}
         for pair in benchmark_results.split(","):
+            if "=" not in pair:
+                continue
             name, acc = pair.strip().split("=")
             bench_dict[name.strip()] = float(acc.strip())
         print_info(f"Benchmark results: {bench_dict}")
 
     readme = _generate_model_card(config, repo_id, tokenizer, bench_dict, model_path=model_path)
     (upload_dir / "README.md").write_text(readme)
-    print_success("Generated model card")
+    print_success(f"Staged upload dir: {upload_dir}")
+
+    return upload_dir
+
+
+def upload_cmd(
+    model_path: str,
+    repo_id: str,
+    tokenizer: str = "Qwen/Qwen2.5-3B",
+    private: bool = False,
+    commit_message: str = "Upload Bit-Axon 3.2B model",
+    benchmark_results: str | None = None,
+) -> None:
+    """Upload model to HuggingFace Hub."""
+    upload_dir = stage_upload_dir(model_path, repo_id, tokenizer, benchmark_results)
+
+    if not (upload_dir / "tokenizer.json").exists():
+        print_error("tokenizer.json not found in upload directory. Upload aborted.")
+        raise SystemExit(1)
 
     api = HfApi()
     print_info(f"Creating repo {repo_id} (private={private})...")

@@ -270,7 +270,11 @@ def pipeline(
     tokenizer: Annotated[str | None, typer.Option("--tokenizer", "-t", help="Tokenizer name or path (required when using real datasets)")] = None,
     config_small: Annotated[bool, typer.Option("--config-small", help="Use small config for testing")] = False,
     config_medium: Annotated[bool, typer.Option("--config-medium", help="Use medium config (~1.5B params)")] = False,
+    config_large: Annotated[bool, typer.Option("--config-large", help="Use large config (full 3.2B params)")] = False,
     repo_id: Annotated[str | None, typer.Option("--repo-id", "-r", help="HuggingFace repo ID for upload (e.g. user/bit-axon-sft)")] = None,
+    benchmark_limit: Annotated[int, typer.Option("--benchmark-limit", help="Max samples per benchmark in Stage 4b")] = 100,
+    benchmark_max_tokens: Annotated[int, typer.Option("--benchmark-max-tokens", help="Max tokens per benchmark item")] = 256,
+    no_benchmarks: Annotated[bool, typer.Option("--no-benchmarks", help="Skip Stage 4b benchmark evaluation")] = False,
 ) -> None:
     """Run full ML pipeline: SFT, merge, quantize, evaluate, ORPO (supports real datasets)."""
     from bit_axon.cli.pipeline import pipeline_cmd
@@ -291,7 +295,11 @@ def pipeline(
         tokenizer=tokenizer,
         config_small=config_small,
         config_medium=config_medium,
+        config_large=config_large,
         repo_id=repo_id,
+        benchmark_limit=benchmark_limit,
+        benchmark_max_tokens=benchmark_max_tokens,
+        benchmarks_enabled=not no_benchmarks,
     )
 
 
@@ -330,6 +338,27 @@ def upload(
         tokenizer=tokenizer,
         private=private,
         commit_message=commit_message,
+        benchmark_results=benchmark_results,
+    )
+
+
+@app.command(name="stage-upload")
+def stage_upload(
+    model_path: Annotated[str, typer.Argument(help="Path to model directory")],
+    repo_id: Annotated[str, typer.Option("--repo-id", "-r", help="HuggingFace repository ID (used for model card)")] = "skyoo2003/bit-axon",
+    tokenizer: Annotated[str, typer.Option("--tokenizer", "-t", help="Tokenizer name or path")] = "Qwen/Qwen2.5-3B",
+    benchmark_results: Annotated[
+        str | None,
+        typer.Option("--benchmark-results", help="Comma-separated benchmark results, e.g. mmlu=0.45,gsm8k=0.32"),
+    ] = None,
+) -> None:
+    """Stage an HF upload folder locally (no network push)."""
+    from bit_axon.cli.upload import stage_upload_dir
+
+    stage_upload_dir(
+        model_path=model_path,
+        repo_id=repo_id,
+        tokenizer=tokenizer,
         benchmark_results=benchmark_results,
     )
 
